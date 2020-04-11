@@ -1,0 +1,14 @@
+# POST    /series/new                                 controllers.SeriesController.new
+# POST    /series/:seriesId/                          controllers.SeriesControllers.join(seriesId: String)
+
+GET     /game/:gameId                                    controllers.GameController.game(gameId: String)
+
+GET     /rest/game/:gameId/player/:playerId/state        controllers.GameController.state(gameId: String, playerId: String)
+GET     /rest/game/:gameId/player/:playerId/stream       controllers.GameController.stream(gameId: String, playerId: String)
+POST    /rest/game/:gameId/player/:playerId/throw        controllers.GameController.throwCards(gameId: String, playerId: String)
+POST    /rest/game/:gameId/player/:playerId/draw         controllers.GameController.draw(gameId: String, playerId: String)
+POST    /rest/game/:gameId/player/:playerId/drawThrow    controllers.GameController.drawThrow(gameId: String, playerId: String)
+POST    /rest/game/:gameId/player/:playerId/yaniv        controllers.GameController.yaniv(gameId: String, playerId: String)
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
