@@ -17,7 +17,7 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
   gameStates += dummyGame
 
   val gameStateStreams =
-    mutable.Map.empty[(GameId, PlayerId), (ActorRef, Source[GameStateView, _])]
+    mutable.Map.empty[(GameId, PlayerId), mutable.Buffer[(ActorRef, Source[GameStateView, _])]]
 
   def getGameState(gameId: GameId): Either[String, GameState] =
     gameStates.get(gameId) match {
@@ -32,8 +32,7 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
     gameStates.get(gameId) match {
       case Some(states) if states.nonEmpty =>
         states.last.players.find(_.id == playerId) match {
-          case Some(player) =>
-            print(states.size)
+          case Some(_) =>
             Right(GameStateView.fromGameState(states.last, playerId))
         }
       case None => Left(s"Game $gameId does not exist")
@@ -47,7 +46,8 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
         states.last.players.find(_.id == playerId) match {
           case Some(_) =>
             val (actor, source) = newSourceActor()
-            gameStateStreams += (gameId, playerId) -> (actor, source)
+            val streams         = gameStateStreams.getOrElse((gameId, playerId), mutable.Buffer.empty)
+            gameStateStreams += (gameId, playerId) -> (streams :+ (actor, source))
             Right(source)
         }
       case None => Left(s"Game $gameId does not exist")
@@ -63,9 +63,9 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
       case Some(states) =>
         gameStates += gameId -> (states :+ gameState)
         gameState.players.foreach { p =>
-          gameStateStreams.get(gameId, p.id).foreach {
+          gameStateStreams.get(gameId, p.id).getOrElse(Seq.empty).foreach {
             case (actor, _) =>
-              println(s"Sending update to ${p.id}")
+              println(s"Sending update to ${p.id} ${actor}")
               actor ! GameStateView.fromGameState(gameState, p.id)
           }
         }
@@ -78,17 +78,16 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
 object GamesService {
   val dummyGame = "g1" -> {
     val initialDeck = Cards.shuffledDeck()
-    val pile = Pile.newPile(initialDeck.head)
-    val p1Cards = initialDeck.drop(1).take(5)
-    val p2Cards = initialDeck.drop(6).take(5)
-    val deck = initialDeck.drop(11)
+    val pile        = Pile.newPile(initialDeck.head)
+    val p1Cards     = initialDeck.drop(1).take(5)
+    val p2Cards     = initialDeck.drop(6).take(5)
+    val deck        = initialDeck.drop(11)
 
     mutable.Buffer(
       GameState(
         id = "g1",
         version = 1,
-        players =
-          Seq(Player("p1", "Max", p1Cards), Player("p2", "Pauli", p2Cards)),
+        players = Seq(Player("p1", "Max", p1Cards), Player("p2", "Pauli", p2Cards)),
         currentPlayer = "p1",
         nextAction = Throw,
         deck = deck,

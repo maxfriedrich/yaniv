@@ -3,28 +3,34 @@ package controllers
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import javax.inject.{Inject, Singleton}
-import models.{Card, DrawSource}
 import play.api.http.ContentTypes
 import play.api.libs.EventSource
 import play.api.libs.json.Json
-import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.{BaseController, ControllerComponents}
-import models.GameJson._
+import models.json._
 import service.{GamesService, IdService}
 
 @Singleton
-class GameController @Inject() (val controllerComponents: ControllerComponents)
-    extends BaseController {
+class GameController @Inject() (val controllerComponents: ControllerComponents) extends BaseController {
 
   implicit val as = ActorSystem("yaniv")
   implicit val ec = as.dispatcher
 
   val gamesService = new GamesService()
-  val idService = new IdService()
+  val idService    = new IdService()
 
   def game(gameId: String) = Action {
     Ok(views.html.game.render())
+  }
+
+  def testUpdate(gameId: String) = Action {
+    gamesService.getGameState(gameId) match {
+      case Left(err) => BadRequest(Json.toJson(Map("error" -> err)))
+      case Right(state) =>
+        gamesService.update(gameId, state)
+        Ok(Json.toJson("ok"))
+    }
   }
 
   def state(gameId: String, playerId: String) = Action { request =>
@@ -48,14 +54,12 @@ class GameController @Inject() (val controllerComponents: ControllerComponents)
   def throwCards(gameId: String, playerId: String) = Action { request =>
     gamesService.getGameState(gameId) match {
       case Left(err) => BadRequest(Json.toJson(Map("error" -> err)))
-      case Right(state) => {
-
-        request.body.asJson
-          .map { json => (json \ "cards").validate[Seq[Card]] } match {
+      case Right(state) =>
+        request.body.asJson.map(_.validate[ThrowCardsClientResponse]) match {
           case None => BadRequest(Json.toJson(Map("error" -> "invalid json")))
           case Some(JsError(err)) =>
             BadRequest(Json.toJson(Map("error" -> err.toString)))
-          case Some(JsSuccess(cards, _)) =>
+          case Some(JsSuccess(ThrowCardsClientResponse(cards), _)) =>
             state.throwCards(playerId, cards) match {
               case Left(err) => BadRequest(Json.toJson(Map("error" -> err)))
               case Right(newState) =>
@@ -69,7 +73,6 @@ class GameController @Inject() (val controllerComponents: ControllerComponents)
                 }
             }
         }
-      }
     }
   }
 
@@ -77,13 +80,11 @@ class GameController @Inject() (val controllerComponents: ControllerComponents)
     gamesService.getGameState(gameId) match {
       case Left(err) => BadRequest(Json.toJson(Map("error" -> err)))
       case Right(state) =>
-        request.body.asJson.map { json =>
-          (json \ "source").validate[DrawSource]
-        } match {
+        request.body.asJson.map(_.validate[DrawCardClientResponse]) match {
           case None => BadRequest(Json.toJson(Map("error" -> "invalid json")))
           case Some(JsError(err)) =>
             BadRequest(Json.toJson(Map("error" -> err.toString)))
-          case Some(JsSuccess(source, _)) =>
+          case Some(JsSuccess(DrawCardClientResponse(source), _)) =>
             state.drawCard(playerId, source) match {
               case Left(err) => BadRequest(Json.toJson(Map("error" -> err)))
               case Right(newState) =>
@@ -100,9 +101,7 @@ class GameController @Inject() (val controllerComponents: ControllerComponents)
     }
   }
 
-  def drawThrow(gameId: String, playerId: String) = Action { request =>
-    Ok(Json.toJson(1))
-  }
+  def drawThrow(gameId: String, playerId: String) = Action { request => Ok(Json.toJson(1)) }
 
   def yaniv(gameId: String, playerId: String) = Action { request =>
     gamesService.getGameState(gameId) match {

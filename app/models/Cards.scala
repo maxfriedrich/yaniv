@@ -10,22 +10,22 @@ sealed trait Suit {
 }
 
 object Diamonds extends Suit {
-  val id = "D"
+  val id   = "D"
   val icon = "♦"
 }
 
 object Cross extends Suit {
-  val id = "C"
+  val id   = "C"
   val icon = "♣"
 }
 
 object Hearts extends Suit {
-  val id = "H"
+  val id   = "H"
   val icon = "♥"
 }
 
 object Spades extends Suit {
-  val id = "S"
+  val id   = "S"
   val icon = "♠"
 }
 
@@ -42,22 +42,22 @@ object Card {
     case ('J', '1') | ('J', '2') | ('J', '3') => Some(Joker(id(1).toInt))
     case (s, v) =>
       for {
-        suit <- Suits.find(_.id == s.toString)
+        suit  <- Suits.find(_.id == s.toString)
         value <- CardValues.find(_.id == v.toString)
       } yield RegularCard(suit, value)
   }
 }
 
 case class RegularCard(suit: Suit, value: CardValue) extends Card {
-  val id = suit.id + value.id
+  val id         = suit.id + value.id
   val gameString = suit.icon + value.id
-  val endValue = value.endValue
+  val endValue   = value.endValue
 }
 
 case class Joker(number: Int) extends Card {
-  val id = s"J$number"
+  val id         = s"J$number"
   val gameString = "J"
-  val endValue = 0
+  val endValue   = 0
 
 }
 
@@ -82,7 +82,7 @@ object Cards {
   )
 
   val Deck = (for {
-    suit <- Suits
+    suit  <- Suits
     value <- CardValues
   } yield RegularCard(suit, value)) ++ Seq(Joker(1), Joker(2), Joker(3))
 

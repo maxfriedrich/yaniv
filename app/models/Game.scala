@@ -6,7 +6,7 @@ import scala.util.Random
 
 object Game {
   Random.setSeed(1L)
-  type GameId = String
+  type GameId   = String
   type PlayerId = String
   val YanivPoints = 5
 }
@@ -22,7 +22,7 @@ object Draw extends GameAction {
 case class Player(id: PlayerId, name: String, cards: Seq[Card])
 
 sealed trait DrawSource
-object DeckSource extends DrawSource
+object DeckSource                 extends DrawSource
 case class PileSource(card: Card) extends DrawSource
 
 case class GameState(
@@ -39,7 +39,7 @@ case class GameState(
   import GameState._
 
   val nextPlayer: PlayerId = {
-    val order = players.sortBy(_.id)
+    val order        = players.sortBy(_.id)
     val currentIndex = order.indexWhere(_.id == currentPlayer)
     if (currentIndex + 1 == players.size)
       order.head.id
@@ -62,9 +62,10 @@ case class GameState(
     else {
       val player = players.find(_.id == playerId).get
       if (!cards.forall(player.cards.contains))
+        // TODO: this breaks for J1 apparently
         return Left("Player does not have these cards")
       val newPlayer = player.copy(cards = player.cards.filterNot(cards.toSet))
-      val newPile = pile.throwCards(cards)
+      val newPile   = pile.throwCards(cards)
       Right(
         this.copy(
           version = version + 1,
@@ -96,7 +97,7 @@ case class GameState(
             (card, deck, pile.drawCard(card))
       }
 
-      val player = players.find(_.id == playerId).get
+      val player    = players.find(_.id == playerId).get
       val newPlayer = player.copy(cards = player.cards ++ Seq(newCard))
       Right(
         this.copy(
@@ -130,7 +131,7 @@ case class GameState(
 
 object GameState {
   def newGame(id: GameId, players: Seq[Player]): GameState = {
-    val shuffledDeck = Random.shuffle(Cards.Deck)
+    val shuffledDeck    = Random.shuffle(Cards.Deck)
     val (pileTop, deck) = (shuffledDeck.head, shuffledDeck.drop(1))
     GameState(
       id,

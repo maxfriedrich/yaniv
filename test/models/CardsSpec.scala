@@ -18,7 +18,7 @@ class CardsSpec extends FlatSpec {
   }
 
   "Pile" should "behave correctly" in {
-    val p = Pile(Seq.empty, Seq.empty, Seq.empty)
+    val p  = Pile(Seq.empty, Seq.empty, Seq.empty)
     val p2 = p.throwCards(Seq(h4, j1, d4))
     val p3 = p2.throwCards(Seq(h3))
     assert(p3.top == Seq(h3))
