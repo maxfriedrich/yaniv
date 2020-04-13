@@ -1,11 +1,8 @@
 package models
 
-import play.api.libs.json.{JsError, JsString, JsSuccess, Json, JsonConfiguration, OWrites, Reads, Writes}
-import play.api.libs.json.JsonNaming.SnakeCase
+import play.api.libs.json.{JsError, JsString, JsSuccess, Json, OWrites, Reads, Writes}
 
 package object json {
-  implicit val jsonConfig = JsonConfiguration(SnakeCase)
-
   implicit val cardReads: Reads[Card] = Reads {
     case s: JsString =>
       val cardOpt = Card.fromString(s.value)
