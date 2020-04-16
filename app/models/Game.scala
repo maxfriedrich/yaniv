@@ -47,47 +47,39 @@ case class GameState(
       order(currentIndex + 1).id
   }
 
-  def throwCards(
-      playerId: PlayerId,
-      cards: Seq[Card]
-  ): Either[String, GameState] = {
+  private def validateGameState(playerId: PlayerId, expectedAction: GameAction): Either[String, GameState] = {
     if (currentPlayer != playerId)
       Left(s"Current player is $currentPlayer")
-    else if (nextAction != Throw)
+    else if (nextAction != expectedAction)
       Left(s"Next action is $nextAction")
     else if (yaniv.nonEmpty)
       Left(s"This game is already over")
-    else if (!isValidCombination(cards))
-      Left(s"Not a valid combination")
-    else {
-      val player = players.find(_.id == playerId).get
-      if (!cards.forall(player.cards.contains))
-        // TODO: this breaks for J1 apparently
-        return Left("Player does not have these cards")
+    else
+      Right(this)
+  }
+
+  def throwCards(playerId: PlayerId, cards: Seq[Card]): Either[String, GameState] = {
+    for {
+      _ <- validateGameState(playerId, Throw)
+      _ <- if (isValidCombination(cards)) Right(()) else Left(s"Not a valid combination")
+      player = players.find(_.id == playerId).get
+      _ <- if (cards.forall(player.cards.contains)) Right(()) else Left("Player does not have these cards")
+    } yield {
       val newPlayer = player.copy(cards = player.cards.filterNot(cards.toSet))
       val newPile   = pile.throwCards(cards)
-      Right(
-        this.copy(
-          version = version + 1,
-          players = players.map { p => if (p.id == playerId) newPlayer else p },
-          nextAction = Draw,
-          pile = newPile
-        )
+      this.copy(
+        version = version + 1,
+        players = players.map { p => if (p.id == playerId) newPlayer else p },
+        nextAction = Draw,
+        pile = newPile
       )
     }
   }
 
-  def drawCard(
-      playerId: PlayerId,
-      source: DrawSource
-  ): Either[String, GameState] = {
-    if (currentPlayer != playerId)
-      Left(s"Current player is $currentPlayer")
-    else if (nextAction != Draw)
-      Left(s"Next action is $nextAction")
-    else if (yaniv.nonEmpty)
-      Left(s"This game is already over")
-    else {
+  def drawCard(playerId: PlayerId, source: DrawSource): Either[String, GameState] = {
+    for {
+      _ <- validateGameState(playerId, Draw)
+    } yield {
       val (newCard, newDeck, newPile) = source match {
         case DeckSource => (deck.head, deck.drop(1), pile)
         case PileSource(card) =>
@@ -99,34 +91,25 @@ case class GameState(
 
       val player    = players.find(_.id == playerId).get
       val newPlayer = player.copy(cards = player.cards ++ Seq(newCard))
-      Right(
-        this.copy(
-          version = version + 1,
-          players = players.map { p => if (p.id == playerId) newPlayer else p },
-          nextAction = Throw,
-          currentPlayer = nextPlayer,
-          deck = newDeck,
-          pile = newPile
-        )
+      this.copy(
+        version = version + 1,
+        players = players.map { p => if (p.id == playerId) newPlayer else p },
+        nextAction = Throw,
+        currentPlayer = nextPlayer,
+        deck = newDeck,
+        pile = newPile
       )
     }
   }
 
-  def callYaniv(playerId: PlayerId): Either[String, GameState] = {
-    if (currentPlayer != playerId)
-      Left(s"Current player is $currentPlayer")
-    else if (nextAction != Throw)
-      Left(s"Next action is $nextAction")
-    else if (yaniv.nonEmpty)
-      Left(s"This game is already over")
-    else {
-      val player = players.find(_.id == playerId).get
-      if (player.cards.map(_.endValue).sum > YanivPoints)
-        Left(s"Calling Yaniv is only allowed with <= $YanivPoints points")
-      else
-        Right(this.copy(version = version + 1, yaniv = Some(playerId)))
-    }
-  }
+  def callYaniv(playerId: PlayerId): Either[String, GameState] =
+    for {
+      _ <- validateGameState(playerId, Throw)
+      player       = players.find(_.id == playerId).get
+      playerPoints = player.cards.map(_.endValue).sum
+      _ <- if (playerPoints <= YanivPoints) Right(())
+      else Left(s"Calling Yaniv is only allowed with <= $YanivPoints points")
+    } yield this.copy(version = version + 1, yaniv = Some(playerId))
 }
 
 object GameState {
