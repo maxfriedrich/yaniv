@@ -1,13 +1,15 @@
 package service
 
 import akka.Done
-import akka.actor.{Actor, ActorRef, ActorSystem}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.stream.{CompletionStrategy, Materializer, OverflowStrategy}
 import akka.stream.scaladsl.Source
 import models.Game.{GameId, PlayerId}
 import models.{Cards, GameState, GameStateView, Pile, Player, Throw}
+import service.ConnectionManager.{Register, Unregister, Update}
 
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext
 
 class GamesService(implicit as: ActorSystem, mat: Materializer) {
 
@@ -16,8 +18,7 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
   val gameStates = mutable.Map.empty[GameId, mutable.Buffer[GameState]]
   gameStates += dummyGame
 
-  val gameStateStreams =
-    mutable.Map.empty[(GameId, PlayerId), mutable.Buffer[(ActorRef, Source[GameStateView, _])]]
+  val connectionManager = as.actorOf(ConnectionManager.props)
 
   def getGameState(gameId: GameId): Either[String, GameState] =
     gameStates.get(gameId) match {
@@ -39,15 +40,13 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
     }
 
   def getGameStateStream(gameId: GameId, playerId: PlayerId)(
-      implicit mat: Materializer
+      implicit ec: ExecutionContext
   ): Either[String, Source[GameStateView, _]] =
     gameStates.get(gameId) match {
       case Some(states) if states.nonEmpty =>
         states.last.players.find(_.id == playerId) match {
           case Some(_) =>
-            val (actor, source) = newSourceActor()
-            val streams         = gameStateStreams.getOrElse((gameId, playerId), mutable.Buffer.empty)
-            gameStateStreams += (gameId, playerId) -> (streams :+ (actor, source))
+            val source = newSourceActor(connectionManager, gameId, playerId)
             Right(source)
         }
       case None => Left(s"Game $gameId does not exist")
@@ -63,11 +62,8 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
       case Some(states) =>
         gameStates += gameId -> (states :+ gameState)
         gameState.players.foreach { p =>
-          gameStateStreams.get(gameId, p.id).getOrElse(Seq.empty).foreach {
-            case (actor, _) =>
-              println(s"Sending update to ${p.id} ${actor}")
-              actor ! GameStateView.fromGameState(gameState, p.id)
-          }
+          println(s"Sending update to ${p.id}")
+          connectionManager ! Update(gameId, p.id, GameStateView.fromGameState(gameState, p.id))
         }
         Right("ok")
       case None => Left(s"Game $gameId does not exist")
@@ -97,39 +93,24 @@ object GamesService {
     )
   }
 
-  private def newSourceActor()(
-      implicit mat: Materializer
-  ): (ActorRef, Source[GameStateView, _]) = {
-    val source: Source[GameStateView, _] = Source.actorRef(
-      completionMatcher = {
-        case Done => CompletionStrategy.immediately
-      },
-      failureMatcher = PartialFunction.empty,
-      bufferSize = 1,
-      overflowStrategy = OverflowStrategy.dropHead
-    )
-    val (actorRef: ActorRef, eventSource) = source.preMaterialize()
-    (actorRef, eventSource)
+  private def newSourceActor(connectionManager: ActorRef, gameId: GameId, playerId: PlayerId)(
+      implicit ec: ExecutionContext
+  ): Source[GameStateView, ActorRef] = {
+    Source
+      .actorRef(
+        completionMatcher = {
+          case Done => CompletionStrategy.immediately
+        },
+        failureMatcher = PartialFunction.empty,
+        bufferSize = 32,
+        overflowStrategy = OverflowStrategy.dropHead
+      )
+      .watchTermination() {
+        case (actorRef: ActorRef, terminate) =>
+          println("watch termination")
+          connectionManager ! Register(gameId, playerId, actorRef)
+          terminate.onComplete(_ => connectionManager ! Unregister(gameId, playerId, actorRef))
+          actorRef
+      }
   }
-
-//  private def newConnectionWatchActor(sourceActor: ActorRef)(implicit as: ActorSystem): ActorRef = {
-//    val connectionId = UUID.randomUUID().toString
-//    val watchActor = as.actorOf(ConnectionWatchActor.props(connectionId, sourceActor), connectionId)
-//
-//  }
 }
-
-//class ConnectionWatchActor(connectionId: String, sourceActor: ActorRef) extends Actor {
-//
-//  context.watch(sourceActor)
-//
-//  override def receive: Receive = {
-//    case Terminated(source) if source == sourceActor => context.stop(self)
-//
-//  }
-//}
-//
-//object ConnectionWatchActor {
-//  def props(connectionId: String, sourceActor: ActorRef): Props =
-//    Props[ConnectionWatchActor](new ConnectionWatchActor(connectionId, sourceActor))
-//}
