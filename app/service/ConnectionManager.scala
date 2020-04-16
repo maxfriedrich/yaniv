@@ -4,27 +4,25 @@ import akka.actor.{Actor, ActorRef, Props}
 import models.Game.{GameId, PlayerId}
 import models.GameStateView
 
-import scala.collection.mutable
-
 class ConnectionManager extends Actor {
   import ConnectionManager._
 
-  private val actors = mutable.Map.empty[(GameId, PlayerId), mutable.Set[ActorRef]]
+  private val actors = Map.empty[(GameId, PlayerId), Set[ActorRef]].withDefault(_ => Set.empty[ActorRef])
 
-  def receive = {
+  def receive = onMessage(actors)
+
+  private def onMessage(actors: Map[(GameId, PlayerId), Set[ActorRef]]): Receive = {
     case Update(gameId, playerId, gameState) =>
-//      println("Manager got update")
+      //      println("Manager got update")
       actors.getOrElse((gameId, playerId), Set.empty).foreach(_ ! gameState)
     case Register(gameId, playerId, actorRef) =>
-//      println("Manager got register")
-      val gamePlayerActors = actors.getOrElse((gameId, playerId), mutable.Set.empty)
-      gamePlayerActors += actorRef
-      actors += (gameId, playerId) -> gamePlayerActors
+      //      println("Manager got register")
+      val newGamePlayerActors = actors(gameId, playerId) + actorRef
+      context.become(onMessage(actors + ((gameId, playerId) -> newGamePlayerActors)))
     case Unregister(gameId, playerId, actorRef) =>
-//      println("Manager got unregister")
-      val gamePlayerActors = actors.getOrElse((gameId, playerId), mutable.Set.empty)
-      gamePlayerActors -= actorRef
-      actors += (gameId, playerId) -> gamePlayerActors
+      //      println("Manager got unregister")
+      val newGamePlayerActors = actors(gameId, playerId) - actorRef
+      context.become(onMessage(actors + ((gameId, playerId) -> newGamePlayerActors)))
   }
 }
 
