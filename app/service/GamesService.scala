@@ -33,8 +33,8 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
     gameStates.get(gameId) match {
       case Some(states) if states.nonEmpty =>
         states.last.players.find(_.id == playerId) match {
-          case Some(_) =>
-            Right(GameStateView.fromGameState(states.last, playerId))
+          case Some(_) => Right(GameStateView.fromGameState(states.last, playerId))
+          case _       => Left(s"Player $playerId is not a part of game $gameId")
         }
       case None => Left(s"Game $gameId does not exist")
     }
@@ -48,6 +48,7 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
           case Some(_) =>
             val source = newSourceActor(connectionManager, gameId, playerId)
             Right(source)
+          case _ => Left(s"Player $playerId is not a part of game $gameId")
         }
       case None => Left(s"Game $gameId does not exist")
     }
