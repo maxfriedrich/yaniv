@@ -1,6 +1,7 @@
 package models
 
-import play.api.libs.json.{JsError, JsString, JsSuccess, Json, OWrites, Reads, Writes}
+import models.Game.PlayerId
+import play.api.libs.json.{JsDefined, JsError, JsString, JsSuccess, Json, OWrites, Reads, Writes}
 
 package object json {
   implicit val cardReads: Reads[Card] = Reads {
@@ -40,7 +41,7 @@ package object json {
   implicit val gameActionReads: Reads[GameAction] = Reads {
     case JsString("throw") => JsSuccess(Throw)
     case JsString("draw")  => JsSuccess(Draw)
-    case s                 => JsError(s"Not a valid game action: $s")
+    case s                 => JsError(s"Not a valid game action: ${s.toString}")
   }
 
   implicit val gameActionWrites: Writes[GameAction] = Writes {
@@ -48,9 +49,32 @@ package object json {
     case Draw  => JsString("draw")
   }
 
-  implicit val playerReads: Reads[Player]            = Json.reads[Player]
-  implicit val playerWrites: OWrites[Player]         = Json.writes[Player]
-  implicit val playerViewWrites: OWrites[PlayerView] = Json.writes[PlayerView]
+  implicit val gameEndingReads: Reads[GameEnding] = Reads { json =>
+    (json \ "type") match {
+      case JsDefined(JsString("yaniv")) => Json.reads[Yaniv].reads(json)
+      case JsDefined(JsString("asaf"))  => Json.reads[Asaf].reads(json)
+      case JsDefined(s)                 => JsError(s"Not a valid game ending type: ${s.toString}")
+      case _                            => JsError(s"Missing `type` field in GameEnding object")
+    }
+  }
+
+  case class JsonYaniv(`type`: String, caller: PlayerId)
+  case class JsonAsaf(`type`: String, caller: PlayerId, winner: PlayerId)
+
+  implicit val gameEndingWrites: Writes[GameEnding] = Writes {
+    case Yaniv(caller)        => Json.writes[JsonYaniv].writes(JsonYaniv("yaniv", caller))
+    case Asaf(caller, winner) => Json.writes[JsonAsaf].writes(JsonAsaf("asaf", caller, winner))
+  }
+
+  implicit val gameResultReads: Reads[GameResult]   = Json.reads[GameResult]
+  implicit val gameResultWrites: Writes[GameResult] = Json.writes[GameResult]
+
+  implicit val playerReads: Reads[Player]    = Json.reads[Player]
+  implicit val playerWrites: OWrites[Player] = Json.writes[Player]
+  implicit val playerViewWrites: Writes[PlayerView] = Writes {
+    case p: PartialPlayerView => Json.writes[PartialPlayerView].writes(p)
+    case f: FullPlayerView    => Json.writes[FullPlayerView].writes(f)
+  }
 
   implicit val pileWrites: OWrites[Pile]         = Json.writes[Pile]
   implicit val pileReads: Reads[Pile]            = Json.reads[Pile]

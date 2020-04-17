@@ -18,14 +18,19 @@ case class GameStateView(
     nextAction: GameAction,
     pile: PileView,
     deck: Int,
-    yaniv: Option[PlayerId]
+    ending: Option[GameResult]
 )
 
 object GameStateView {
   def fromGameState(gameState: GameState, playerId: PlayerId): GameStateView = {
     val me = gameState.players.find(_.id == playerId).get
     val otherPlayers =
-      gameState.players.filterNot(Set(me)).map(PlayerView.fromPlayer)
+      gameState.players.filterNot(Set(me)).map { player =>
+        if (gameState.ending.isDefined)
+          FullPlayerView.fromPlayer(player)
+        else
+          PartialPlayerView.fromPlayer(player)
+      }
     GameStateView(
       gameState.id,
       gameState.version,
@@ -35,15 +40,29 @@ object GameStateView {
       gameState.nextAction,
       PileView.fromPile(gameState.pile),
       gameState.deck.size,
-      gameState.yaniv
+      gameState.ending
     )
   }
 }
 
-case class PlayerView(id: PlayerId, name: String, cards: Int)
+trait PlayerView {
+  val id: PlayerId
+  val name: String
+  val numCards: Int
+}
 
-object PlayerView {
-  def fromPlayer(player: Player): PlayerView = {
-    PlayerView(player.id, player.name, player.cards.size)
+case class FullPlayerView(id: PlayerId, name: String, numCards: Int, cards: Seq[Card]) extends PlayerView
+
+object FullPlayerView {
+  def fromPlayer(player: Player): FullPlayerView = {
+    FullPlayerView(player.id, player.name, player.cards.size, player.cards)
+  }
+}
+
+case class PartialPlayerView(id: PlayerId, name: String, numCards: Int) extends PlayerView
+
+object PartialPlayerView {
+  def fromPlayer(player: Player): PartialPlayerView = {
+    PartialPlayerView(player.id, player.name, player.cards.size)
   }
 }

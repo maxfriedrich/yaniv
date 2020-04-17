@@ -25,6 +25,12 @@ sealed trait DrawSource
 object DeckSource                 extends DrawSource
 case class PileSource(card: Card) extends DrawSource
 
+sealed trait GameEnding
+case class Yaniv(caller: PlayerId)                  extends GameEnding
+case class Asaf(caller: PlayerId, winner: PlayerId) extends GameEnding
+
+case class GameResult(ending: GameEnding, points: Map[PlayerId, Int])
+
 case class GameState(
     id: GameId,
     version: Int,
@@ -33,7 +39,7 @@ case class GameState(
     nextAction: GameAction,
     pile: Pile,
     deck: Seq[Card],
-    yaniv: Option[PlayerId]
+    ending: Option[GameResult]
 ) {
 
   import GameState._
@@ -52,7 +58,7 @@ case class GameState(
       Left(s"Current player is $currentPlayer")
     else if (nextAction != expectedAction)
       Left(s"Next action is $nextAction")
-    else if (yaniv.nonEmpty)
+    else if (ending.nonEmpty)
       Left(s"This game is already over")
     else
       Right(this)
@@ -109,7 +115,7 @@ case class GameState(
       playerPoints = player.cards.map(_.endValue).sum
       _ <- if (playerPoints <= YanivPoints) Right(())
       else Left(s"Calling Yaniv is only allowed with <= $YanivPoints points")
-    } yield this.copy(version = version + 1, yaniv = Some(playerId))
+    } yield this.copy(version = version + 1, ending = Some(finishGame(this, playerId)))
 }
 
 object GameState {
@@ -168,4 +174,18 @@ object GameState {
       }
       ._1
   }
+
+  private def finishGame(gameState: GameState, yanivCaller: PlayerId): GameResult = {
+    val points           = gameState.players.map(p => p.id -> p.cards.map(c => c.endValue).sum).toMap
+    val minPointsPlayers = points.groupBy(_._2).toSeq.minBy(_._1)._2.keys.toSeq
+
+    val ending =
+      if (minPointsPlayers.size == 1 && minPointsPlayers.head == yanivCaller)
+        Yaniv(yanivCaller)
+      else
+        Asaf(yanivCaller, minPointsPlayers.filter(_ != yanivCaller).head)
+
+    GameResult(ending, points)
+  }
+
 }

@@ -88,7 +88,7 @@ object GamesService {
         nextAction = Throw,
         deck = deck,
         pile = pile,
-        yaniv = None
+        ending = None
       )
     )
   }
