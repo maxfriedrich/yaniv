@@ -3,12 +3,12 @@ package controllers
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import javax.inject.{Inject, Singleton}
-import models.{GameLogic, GameSeriesState, GameState}
+import models.{GameLogic, GameSeriesState, GameState, PlayerInfo}
 import play.api.http.ContentTypes
 import play.api.libs.EventSource
 import play.api.libs.json.Json
 import play.api.libs.json._
-import play.api.mvc.{BaseController, ControllerComponents, Result}
+import play.api.mvc.{AnyContent, BaseController, ControllerComponents, Request, Result}
 import models.JsonImplicits._
 import service.{GamesService, IdService}
 
@@ -23,6 +23,25 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
 
   def game(gameSeriesId: String) = Action {
     Ok(views.html.game.render())
+  }
+
+  def newGame() = Action { request =>
+    val gameSeries = GameSeriesState.empty(idService.nextId())
+    val result = for {
+      _ <- gamesService.create(gameSeries)
+    } yield Ok(Json.toJson(Map("id" -> gameSeries.id)))
+    resultOrError(result)
+  }
+
+  def join(gameSeriesId: String) = Action { request =>
+    val result = for {
+      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
+      payload <- requestJson[JoinGameClientResponse](request)
+      info = PlayerInfo(id = idService.nextId(), name = payload.name)
+      newSeriesState <- GameSeriesState.addPlayer(gameSeriesState, info)
+      _ <- gamesService.update(gameSeriesId, newSeriesState)
+    } yield Ok(Json.toJson("ok"))
+    resultOrError(result)
   }
 
   def testUpdate(gameSeriesId: String) = Action { request =>
@@ -57,12 +76,8 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
   def throwCards(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
-      json = request.body.asJson.map(_.validate[ThrowCardsClientResponse])
-      cards <- json match {
-        case None                                                => Left("invalid json")
-        case Some(JsError(e))                                    => Left("json error: $e")
-        case Some(JsSuccess(ThrowCardsClientResponse(cards), _)) => Right(cards)
-      }
+      payload <- requestJson[ThrowCardsClientResponse](request)
+      cards = payload.cards
       gameState     <- getGameState(gameSeriesState)
       newGameState  <- GameLogic.throwCards(gameState, playerId, cards)
       _             <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = Some(newGameState)))
@@ -74,12 +89,8 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
   def draw(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
-      json = request.body.asJson.map(_.validate[DrawCardClientResponse])
-      source <- json match {
-        case None                                               => Left("invalid json")
-        case Some(JsError(e))                                   => Left("json error: $e")
-        case Some(JsSuccess(DrawCardClientResponse(source), _)) => Right(source)
-      }
+      payload <- requestJson[DrawCardClientResponse](request)
+      source = payload.source
       gameState     <- getGameState(gameSeriesState)
       newGameState  <- GameLogic.drawCard(gameState, playerId, source)
       _             <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = Some(newGameState)))
@@ -88,7 +99,9 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
     resultOrError(result)
   }
 
-  def drawThrow(gameSeriesId: String, playerId: String) = Action { request => Ok(Json.toJson(1)) }
+  def drawThrow(gameSeriesId: String, playerId: String) = Action { request =>
+    Ok(Json.toJson(1))
+  }
 
   def yaniv(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
@@ -99,6 +112,17 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
       gameStateView   <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
     } yield Ok(Json.toJson(gameStateView))
     resultOrError(result)
+  }
+
+  def requestJson[T: Reads](request: Request[AnyContent]): Either[String, T] = {
+    val json = request.body.asJson.map(_.validate[T])
+    for {
+      content <- json match {
+        case None => Left("invalid json")
+        case Some(JsError(e)) => Left("json error: $e")
+        case Some(JsSuccess(t, _)) => Right(t)
+      }
+    } yield content
   }
 
   def resultOrError(result: Either[String, Result]): Result = result match {

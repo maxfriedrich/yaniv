@@ -52,9 +52,14 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
       case None => Left(s"Game $gameSeriesId does not exist")
     }
 
-  def create(gameSeriesId: GameSeriesId, gameSeriesState: GameSeriesState): Either[String, String] = {
-    gameSeriesStates += gameSeriesId -> mutable.Buffer(gameSeriesState)
-    Right("ok")
+  def create(initialState: GameSeriesState): Either[String, String] = {
+    val gameSeriesId = initialState.id
+    if (gameSeriesStates.contains(gameSeriesId))
+      Left(s"Game $gameSeriesId already exists")
+    else {
+      gameSeriesStates += gameSeriesId -> mutable.Buffer(initialState)
+      Right("ok")
+    }
   }
 
   def update(gameSeriesId: GameSeriesId, gameSeriesState: GameSeriesState): Either[String, String] = {

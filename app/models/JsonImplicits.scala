@@ -3,6 +3,10 @@ package models
 import play.api.libs.json.{JsDefined, JsError, JsString, JsSuccess, Json, OWrites, Reads, Writes}
 
 object JsonImplicits {
+  case class JoinGameClientResponse(name: String)
+
+  implicit val joinGameClientResponseReads: Reads[JoinGameClientResponse] = Json.reads[JoinGameClientResponse]
+
   implicit val cardReads: Reads[Card] = Reads {
     case s: JsString =>
       val cardOpt = Card.fromString(s.value)

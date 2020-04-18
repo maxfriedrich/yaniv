@@ -3,8 +3,8 @@ package service
 class IdService {
   var current = 0
 
-  def nextId(): Int = {
+  def nextId(): String = {
     current += 1
-    current
+    "g" + current.toString
   }
 }
