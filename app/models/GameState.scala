@@ -33,7 +33,8 @@ object GameState {
   def newGame(players: Seq[PlayerInfo]): GameState = {
     val shuffled = Shuffle.shuffle(players.size)
     GameState(
-      players = players.zip(shuffled.playerCards).map { case (player, cards) => PlayerCards(id = player.id, cards = cards) },
+      players =
+        players.zip(shuffled.playerCards).map { case (player, cards) => PlayerCards(id = player.id, cards = cards) },
       currentPlayer = players.head.id,
       nextAction = Throw,
       pile = shuffled.pile,

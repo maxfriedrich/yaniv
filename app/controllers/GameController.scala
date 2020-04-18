@@ -6,7 +6,6 @@ import javax.inject.{Inject, Singleton}
 import models.{GameLogic, GameSeriesState, GameState, PlayerInfo}
 import play.api.http.ContentTypes
 import play.api.libs.EventSource
-import play.api.libs.json.Json
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, BaseController, ControllerComponents, Request, Result}
 import models.JsonImplicits._
@@ -14,6 +13,8 @@ import service.{GamesService, IdService}
 
 @Singleton
 class GameController @Inject() (val controllerComponents: ControllerComponents) extends BaseController {
+
+  import GameController._
 
   implicit val as = ActorSystem("yaniv")
   implicit val ec = as.dispatcher
@@ -36,10 +37,10 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
   def join(gameSeriesId: String) = Action { request =>
     val result = for {
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
-      payload <- requestJson[JoinGameClientResponse](request)
+      payload         <- requestJson[JoinGameClientResponse](request)
       info = PlayerInfo(id = idService.nextId(), name = payload.name)
       newSeriesState <- GameSeriesState.addPlayer(gameSeriesState, info)
-      _ <- gamesService.update(gameSeriesId, newSeriesState)
+      _              <- gamesService.update(gameSeriesId, newSeriesState)
     } yield Ok(Json.toJson("ok"))
     resultOrError(result)
   }
@@ -76,7 +77,7 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
   def throwCards(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
-      payload <- requestJson[ThrowCardsClientResponse](request)
+      payload         <- requestJson[ThrowCardsClientResponse](request)
       cards = payload.cards
       gameState     <- getGameState(gameSeriesState)
       newGameState  <- GameLogic.throwCards(gameState, playerId, cards)
@@ -89,7 +90,7 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
   def draw(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
-      payload <- requestJson[DrawCardClientResponse](request)
+      payload         <- requestJson[DrawCardClientResponse](request)
       source = payload.source
       gameState     <- getGameState(gameSeriesState)
       newGameState  <- GameLogic.drawCard(gameState, playerId, source)
@@ -99,9 +100,7 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
     resultOrError(result)
   }
 
-  def drawThrow(gameSeriesId: String, playerId: String) = Action { request =>
-    Ok(Json.toJson(1))
-  }
+  def drawThrow(gameSeriesId: String, playerId: String) = Action { request => Ok(Json.toJson(1)) }
 
   def yaniv(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
@@ -113,13 +112,17 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
     } yield Ok(Json.toJson(gameStateView))
     resultOrError(result)
   }
+}
+
+object GameController {
+  import play.api.mvc.Results.BadRequest
 
   def requestJson[T: Reads](request: Request[AnyContent]): Either[String, T] = {
     val json = request.body.asJson.map(_.validate[T])
     for {
       content <- json match {
-        case None => Left("invalid json")
-        case Some(JsError(e)) => Left("json error: $e")
+        case None                  => Left("invalid json")
+        case Some(JsError(e))      => Left("json error: $e")
         case Some(JsSuccess(t, _)) => Right(t)
       }
     } yield content
