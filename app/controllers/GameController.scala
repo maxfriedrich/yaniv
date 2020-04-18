@@ -41,6 +41,15 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
       info = PlayerInfo(id = idService.nextId(), name = payload.name)
       newSeriesState <- GameSeriesState.addPlayer(gameSeriesState, info)
       _              <- gamesService.update(gameSeriesId, newSeriesState)
+    } yield Ok(Json.toJson("id" -> info.id))
+    resultOrError(result)
+  }
+
+  def start(gameSeriesId: String) = Action { request =>
+    val result = for {
+      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
+      newSeriesState  <- GameSeriesState.start(gameSeriesState)
+      _               <- gamesService.update(gameSeriesId, newSeriesState)
     } yield Ok(Json.toJson("ok"))
     resultOrError(result)
   }

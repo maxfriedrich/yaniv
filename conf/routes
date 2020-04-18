@@ -5,6 +5,7 @@ GET     /game/:gameSeriesId                                    controllers.GameC
 
 POST    /rest/game/new                                         controllers.GameController.newGame()
 POST    /rest/game/:gameSeriesId/join                          controllers.GameController.join(gameSeriesId: String)
+POST    /rest/game/:gameSeriesId/start                         controllers.GameController.join(gameSeriesId: String)
 
 POST    /rest/game/:gameSeriesId/testUpdate                    controllers.GameController.testUpdate(gameSeriesId: String)
 

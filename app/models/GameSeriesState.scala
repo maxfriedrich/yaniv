@@ -22,4 +22,17 @@ object GameSeriesState {
       scores = gss.scores ++ Map(playerInfo.id -> 0)
     )
   }
+
+  def start(gss: GameSeriesState): Either[String, GameSeriesState] = {
+    for {
+      _ <- gss.gameState match {
+        case None                            => Right(())
+        case Some(gs) if gs.ending.isDefined => Right(())
+        case _                               => Left("There is a running game")
+      }
+    } yield gss.copy(
+      version = gss.version + 1,
+      gameState = Some(GameState.newGame(gss.players))
+    )
+  }
 }
