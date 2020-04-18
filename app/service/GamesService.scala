@@ -1,11 +1,10 @@
 package service
 
 import akka.Done
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.{CompletionStrategy, Materializer, OverflowStrategy}
 import akka.stream.scaladsl.Source
-import models.Game.{GameId, PlayerId}
-import models.{Cards, GameState, GameStateView, Pile, Player, Throw}
+import models.{DummyGame, GameSeriesState, GameSeriesId, GameSeriesStateView, GameState, PlayerId}
 import service.ConnectionManager.{Register, Unregister, Update}
 
 import scala.collection.mutable
@@ -15,88 +14,67 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
 
   import GamesService._
 
-  val gameStates = mutable.Map.empty[GameId, mutable.Buffer[GameState]]
-  gameStates += dummyGame
+  val gameSeriesStates = mutable.Map.empty[GameSeriesId, mutable.Buffer[GameSeriesState]]
+  gameSeriesStates += DummyGame.dummyGame
 
   val connectionManager = as.actorOf(ConnectionManager.props)
 
-  def getGameState(gameId: GameId): Either[String, GameState] =
-    gameStates.get(gameId) match {
-      case Some(states) if states.nonEmpty => Right(states.last)
-      case None                            => Left(s"Game $gameId does not exist")
+  def getGameSeriesState(gameSeriesId: GameSeriesId): Either[String, GameSeriesState] =
+    gameSeriesStates.get(gameSeriesId) match {
+      case Some(series) if series.nonEmpty => Right(series.last)
+      case None                            => Left(s"Game series $gameSeriesId does not exist")
     }
 
-  def getGameStateView(
-      gameId: GameId,
+  def getGameSeriesStateView(
+      gameSeriesId: GameSeriesId,
       playerId: PlayerId
-  ): Either[String, GameStateView] =
-    gameStates.get(gameId) match {
-      case Some(states) if states.nonEmpty =>
-        states.last.players.find(_.id == playerId) match {
-          case Some(_) => Right(GameStateView.fromGameState(states.last, playerId))
-          case _       => Left(s"Player $playerId is not a part of game $gameId")
+  ): Either[String, GameSeriesStateView] =
+    gameSeriesStates.get(gameSeriesId) match {
+      case Some(series) if series.nonEmpty =>
+        series.last.players.find(_.id == playerId) match {
+          case Some(_) => Right(GameSeriesStateView.fromGameSeriesState(series.last, playerId))
+          case _       => Left(s"Player $playerId is not a part of game $gameSeriesId")
         }
-      case None => Left(s"Game $gameId does not exist")
+      case None => Left(s"Game $gameSeriesId does not exist")
     }
 
-  def getGameStateStream(gameId: GameId, playerId: PlayerId)(
+  def getGameSeriesStateStream(gameSeriesId: GameSeriesId, playerId: PlayerId)(
       implicit ec: ExecutionContext
-  ): Either[String, Source[GameStateView, _]] =
-    gameStates.get(gameId) match {
-      case Some(states) if states.nonEmpty =>
-        states.last.players.find(_.id == playerId) match {
+  ): Either[String, Source[GameSeriesStateView, _]] =
+    gameSeriesStates.get(gameSeriesId) match {
+      case Some(series) if series.nonEmpty =>
+        series.last.players.find(_.id == playerId) match {
           case Some(_) =>
-            val source = newSourceActor(connectionManager, gameId, playerId)
+            val source = newSourceActor(connectionManager, gameSeriesId, playerId)
             Right(source)
-          case _ => Left(s"Player $playerId is not a part of game $gameId")
+          case _ => Left(s"Player $playerId is not a part of game $gameSeriesId")
         }
-      case None => Left(s"Game $gameId does not exist")
+      case None => Left(s"Game $gameSeriesId does not exist")
     }
 
-  def create(gameId: GameId, gameState: GameState): Either[String, String] = {
-    gameStates += gameId -> mutable.Buffer(gameState)
+  def create(gameSeriesId: GameSeriesId, gameSeriesState: GameSeriesState): Either[String, String] = {
+    gameSeriesStates += gameSeriesId -> mutable.Buffer(gameSeriesState)
     Right("ok")
   }
 
-  def update(gameId: GameId, gameState: GameState): Either[String, String] = {
-    gameStates.get(gameId) match {
-      case Some(states) =>
-        gameStates += gameId -> (states :+ gameState)
-        gameState.players.foreach { p =>
+  def update(gameSeriesId: GameSeriesId, gameSeriesState: GameSeriesState): Either[String, String] = {
+    gameSeriesStates.get(gameSeriesId) match {
+      case Some(series) =>
+        gameSeriesStates += gameSeriesId -> (series :+ gameSeriesState)
+        gameSeriesState.players.foreach { p =>
           println(s"Sending update to ${p.id}")
-          connectionManager ! Update(gameId, p.id, GameStateView.fromGameState(gameState, p.id))
+          connectionManager ! Update(gameSeriesId, p.id, GameSeriesStateView.fromGameSeriesState(gameSeriesState, p.id))
         }
         Right("ok")
-      case None => Left(s"Game $gameId does not exist")
+      case None => Left(s"Game $gameSeriesId does not exist")
     }
   }
 }
 
 object GamesService {
-  val dummyGame = "g1" -> {
-    val initialDeck = Cards.shuffledDeck()
-    val pile        = Pile.newPile(initialDeck.head)
-    val p1Cards     = initialDeck.drop(1).take(5)
-    val p2Cards     = initialDeck.drop(6).take(5)
-    val deck        = initialDeck.drop(11)
-
-    mutable.Buffer(
-      GameState(
-        id = "g1",
-        version = 1,
-        players = Seq(Player("p1", "Max", p1Cards), Player("p2", "Pauli", p2Cards)),
-        currentPlayer = "p1",
-        nextAction = Throw,
-        deck = deck,
-        pile = pile,
-        ending = None
-      )
-    )
-  }
-
-  private def newSourceActor(connectionManager: ActorRef, gameId: GameId, playerId: PlayerId)(
+  private def newSourceActor(connectionManager: ActorRef, gameSeriesId: GameSeriesId, playerId: PlayerId)(
       implicit ec: ExecutionContext
-  ): Source[GameStateView, ActorRef] = {
+  ): Source[GameSeriesStateView, ActorRef] = {
     Source
       .actorRef(
         completionMatcher = {
@@ -109,8 +87,8 @@ object GamesService {
       .watchTermination() {
         case (actorRef: ActorRef, terminate) =>
           println("watch termination")
-          connectionManager ! Register(gameId, playerId, actorRef)
-          terminate.onComplete(_ => connectionManager ! Unregister(gameId, playerId, actorRef))
+          connectionManager ! Register(gameSeriesId, playerId, actorRef)
+          terminate.onComplete(_ => connectionManager ! Unregister(gameSeriesId, playerId, actorRef))
           actorRef
       }
   }

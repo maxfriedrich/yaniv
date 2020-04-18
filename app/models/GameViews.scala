@@ -1,7 +1,5 @@
 package models
 
-import models.Game.{GameId, PlayerId}
-
 case class PileView(top: Seq[Card], drawable: Seq[DrawableCard], bottom: Int)
 
 object PileView {
@@ -10,10 +8,8 @@ object PileView {
 }
 
 case class GameStateView(
-    id: GameId,
-    version: Int,
-    me: Player,
-    otherPlayers: Seq[PlayerView],
+    me: PlayerCards,
+    otherPlayers: Seq[PlayerCardsView],
     currentPlayer: PlayerId,
     nextAction: GameAction,
     pile: PileView,
@@ -27,13 +23,11 @@ object GameStateView {
     val otherPlayers =
       gameState.players.filterNot(Set(me)).map { player =>
         if (gameState.ending.isDefined)
-          FullPlayerView.fromPlayer(player)
+          FullPlayerCardsView.fromPlayerCards(player)
         else
-          PartialPlayerView.fromPlayer(player)
+          PartialPlayerCardsView.fromPlayerCards(player)
       }
     GameStateView(
-      gameState.id,
-      gameState.version,
       me,
       otherPlayers,
       gameState.currentPlayer,
@@ -45,24 +39,31 @@ object GameStateView {
   }
 }
 
-trait PlayerView {
+trait PlayerCardsView {
   val id: PlayerId
-  val name: String
   val numCards: Int
 }
 
-case class FullPlayerView(id: PlayerId, name: String, numCards: Int, cards: Seq[Card]) extends PlayerView
+case class FullPlayerCardsView(id: PlayerId, numCards: Int, cards: Seq[Card]) extends PlayerCardsView
 
-object FullPlayerView {
-  def fromPlayer(player: Player): FullPlayerView = {
-    FullPlayerView(player.id, player.name, player.cards.size, player.cards)
+object FullPlayerCardsView {
+  def fromPlayerCards(player: PlayerCards): FullPlayerCardsView = {
+    FullPlayerCardsView(player.id, player.cards.size, player.cards)
   }
 }
 
-case class PartialPlayerView(id: PlayerId, name: String, numCards: Int) extends PlayerView
+case class PartialPlayerCardsView(id: PlayerId, numCards: Int) extends PlayerCardsView
 
-object PartialPlayerView {
-  def fromPlayer(player: Player): PartialPlayerView = {
-    PartialPlayerView(player.id, player.name, player.cards.size)
+object PartialPlayerCardsView {
+  def fromPlayerCards(player: PlayerCards): PartialPlayerCardsView = {
+    PartialPlayerCardsView(player.id, player.cards.size)
+  }
+}
+
+case class GameSeriesStateView(id: GameSeriesId, version: Int, players: Seq[PlayerInfo], gameState: GameStateView, scores: Map[PlayerId, Int])
+
+object GameSeriesStateView {
+  def fromGameSeriesState(gameSeries: GameSeriesState, playerId: PlayerId): GameSeriesStateView = {
+    GameSeriesStateView(gameSeries.id, gameSeries.version, gameSeries.players, GameStateView.fromGameState(gameSeries.gameState, playerId), gameSeries.scores)
   }
 }

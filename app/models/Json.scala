@@ -1,9 +1,8 @@
 package models
 
-import models.Game.PlayerId
 import play.api.libs.json.{JsDefined, JsError, JsString, JsSuccess, Json, OWrites, Reads, Writes}
 
-package object json {
+object JsonImplicits {
   implicit val cardReads: Reads[Card] = Reads {
     case s: JsString =>
       val cardOpt = Card.fromString(s.value)
@@ -69,11 +68,14 @@ package object json {
   implicit val gameResultReads: Reads[GameResult]   = Json.reads[GameResult]
   implicit val gameResultWrites: Writes[GameResult] = Json.writes[GameResult]
 
-  implicit val playerReads: Reads[Player]    = Json.reads[Player]
-  implicit val playerWrites: OWrites[Player] = Json.writes[Player]
-  implicit val playerViewWrites: Writes[PlayerView] = Writes {
-    case p: PartialPlayerView => Json.writes[PartialPlayerView].writes(p)
-    case f: FullPlayerView    => Json.writes[FullPlayerView].writes(f)
+  implicit val playerInfoReads: Reads[PlayerInfo] = Json.reads[PlayerInfo]
+  implicit val playerInfoWrites: Writes[PlayerInfo] = Json.writes[PlayerInfo]
+
+  implicit val playerReads: Reads[PlayerCards]         = Json.reads[PlayerCards]
+  implicit val playerCardsWrites: OWrites[PlayerCards] = Json.writes[PlayerCards]
+  implicit val playerCardsViewWrites: Writes[PlayerCardsView] = Writes {
+    case p: PartialPlayerCardsView => Json.writes[PartialPlayerCardsView].writes(p)
+    case f: FullPlayerCardsView    => Json.writes[FullPlayerCardsView].writes(f)
   }
 
   implicit val pileWrites: OWrites[Pile]         = Json.writes[Pile]
@@ -83,4 +85,8 @@ package object json {
   implicit val gameStateWrites: OWrites[GameState]         = Json.writes[GameState]
   implicit val gameStateReads: Reads[GameState]            = Json.reads[GameState]
   implicit val gameStateViewWrites: OWrites[GameStateView] = Json.writes[GameStateView]
+
+  implicit val gameSeriesWrites: Writes[GameSeriesState] = Json.writes[GameSeriesState]
+  implicit val gameSeriesReads: Reads[GameSeriesState]   = Json.reads[GameSeriesState]
+  implicit val gameSeriesViewWrites: OWrites[GameSeriesStateView] = Json.writes[GameSeriesStateView]
 }
