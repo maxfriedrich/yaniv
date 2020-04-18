@@ -1,10 +1,10 @@
 package service
 
+import java.util.UUID
+
 class IdService {
-  var current = 0
 
   def nextId(): String = {
-    current += 1
-    "g" + current.toString
+    UUID.randomUUID().toString
   }
 }

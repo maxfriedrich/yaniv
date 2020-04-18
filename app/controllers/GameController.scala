@@ -109,7 +109,18 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
     resultOrError(result)
   }
 
-  def drawThrow(gameSeriesId: String, playerId: String) = Action { request => Ok(Json.toJson(1)) }
+  def drawThrow(gameSeriesId: String, playerId: String) = Action { request =>
+    val result = for {
+      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
+      payload         <- requestJson[DrawThrowCardClientResponse](request)
+      card = payload.card
+      gameState     <- getGameState(gameSeriesState)
+      newGameState  <- GameLogic.drawThrowCard(gameState, playerId, card)
+      _             <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = Some(newGameState)))
+      gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
+    } yield Ok(Json.toJson(gameStateView))
+    resultOrError(result)
+  }
 
   def yaniv(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {

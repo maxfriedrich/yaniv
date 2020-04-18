@@ -13,7 +13,10 @@ object DummyGame {
         players = Seq(PlayerInfo("p1", "Max"), PlayerInfo("p2", "Pauli")),
         gameState = Some(
           GameState(
-            players = Seq(PlayerCards("p1", shuffled.playerCards(0)), PlayerCards("p2", shuffled.playerCards(1))),
+            players = Seq(
+              PlayerCards("p1", shuffled.playerCards(0), None),
+              PlayerCards("p2", shuffled.playerCards(1), None)
+            ),
             currentPlayer = "p1",
             nextAction = Throw,
             pile = shuffled.pile,

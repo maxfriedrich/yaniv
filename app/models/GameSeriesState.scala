@@ -8,7 +8,17 @@ case class GameSeriesState(
     players: Seq[PlayerInfo],
     gameState: Option[GameState],
     scores: Map[PlayerId, Int]
-)
+) {
+  val timestamp: String = java.time.LocalDateTime.now.toString
+
+  def copy(
+      players: Seq[PlayerInfo] = players,
+      gameState: Option[GameState] = gameState,
+      scores: Map[PlayerId, Int] = scores
+  ): GameSeriesState = {
+    GameSeriesState(id = id, version = version + 1, players = players, gameState = gameState, scores = scores)
+  }
+}
 
 object GameSeriesState {
   def empty(id: GameSeriesId): GameSeriesState = GameSeriesState(id, 1, Seq.empty, None, Map.empty)
@@ -17,7 +27,6 @@ object GameSeriesState {
     for {
       _ <- if (gss.gameState.isDefined) Left("Game already started") else Right(())
     } yield gss.copy(
-      version = gss.version + 1,
       players = gss.players :+ playerInfo,
       scores = gss.scores ++ Map(playerInfo.id -> 0)
     )
@@ -31,7 +40,6 @@ object GameSeriesState {
         case _                               => Left("There is a running game")
       }
     } yield gss.copy(
-      version = gss.version + 1,
       gameState = Some(GameState.newGame(gss.players))
     )
   }

@@ -1,5 +1,9 @@
 package models
 
+sealed trait DrawThrowLocation
+object Before extends DrawThrowLocation
+object After  extends DrawThrowLocation
+
 case class Pile(
     top: Seq[Card],
     drawable: Seq[DrawableCard],
@@ -16,6 +20,14 @@ case class Pile(
 
   def drawCard(card: Card): Pile =
     this.copy(drawable = drawable.filterNot(_.card == card))
+
+  def drawThrowCard(card: Card, location: DrawThrowLocation): Pile =
+    this.copy(
+      top = location match {
+        case Before => card +: top
+        case After  => top :+ card
+      }
+    )
 }
 
 object Pile {

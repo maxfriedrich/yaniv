@@ -1,13 +1,26 @@
 package models
 
 object GameLogic {
+
+  def playerOrder(gs: GameState): Seq[PlayerId] = gs.players.map(_.id).sorted
+
   def nextPlayer(gs: GameState): PlayerId = {
-    val order        = gs.players.sortBy(_.id)
-    val currentIndex = order.indexWhere(_.id == gs.currentPlayer)
+    val order        = playerOrder(gs)
+    val currentIndex = order.indexOf(gs.currentPlayer)
     if (currentIndex + 1 == gs.players.size)
-      order.head.id
+      order.head
     else
-      order(currentIndex + 1).id
+      order(currentIndex + 1)
+  }
+
+  // for draw-throw when it's already someone else's turn
+  def previousPlayer(gs: GameState): PlayerId = {
+    val order        = playerOrder(gs)
+    val currentIndex = order.indexOf(gs.currentPlayer)
+    if (currentIndex == 0)
+      order.last
+    else
+      order(currentIndex - 1)
   }
 
   private def validateGameState(
@@ -28,7 +41,7 @@ object GameLogic {
   def throwCards(gs: GameState, playerId: PlayerId, cards: Seq[Card]): Either[String, GameState] = {
     for {
       _ <- validateGameState(gs, playerId, Throw)
-      _ <- if (isValidCombination(cards)) Right(()) else Left(s"Not a valid combination")
+      _ <- if (isValidCombination(cards)) Right(()) else Left("Not a valid combination")
       player = gs.players.find(_.id == playerId).get
       _ <- if (cards.forall(player.cards.contains)) Right(()) else Left("Player does not have these cards")
     } yield {
@@ -46,23 +59,44 @@ object GameLogic {
     for {
       _ <- validateGameState(gs, playerId, Draw)
     } yield {
-      val (newCard, newDeck, newPile) = source match {
-        case DeckSource => (gs.deck.head, gs.deck.drop(1), gs.pile)
+      val (newCard, drawThrowable, newDeck, newPile) = source match {
+        case DeckSource => (gs.deck.head, Some(gs.deck.head), gs.deck.drop(1), gs.pile)
         case PileSource(card) =>
           if (!gs.pile.drawable.filter(_.drawable).map(_.card).contains(card))
             return Left(s"Card ${card.id} is not drawable")
           else
-            (card, gs.deck, gs.pile.drawCard(card))
+            (card, None, gs.deck, gs.pile.drawCard(card))
       }
 
-      val player    = gs.players.find(_.id == playerId).get
-      val newPlayer = player.copy(cards = player.cards ++ Seq(newCard))
+      val playerCards = gs.players.find(_.id == playerId).get
+      val newPlayer   = playerCards.copy(cards = playerCards.cards :+ newCard, drawThrowable = drawThrowable)
       gs.copy(
         players = gs.players.map { p => if (p.id == playerId) newPlayer else p },
         currentPlayer = nextPlayer(gs),
         nextAction = Throw,
         pile = newPile,
         deck = newDeck
+      )
+    }
+  }
+
+  def drawThrowCard(gs: GameState, playerId: PlayerId, card: Card): Either[String, GameState] = {
+    for {
+      _ <- validateGameState(gs, previousPlayer(gs), Draw)
+      drawThrowLocation <- if (isValidCombination(card +: gs.pile.top)) Right(Before)
+      else if (isValidCombination(gs.pile.top :+ card)) Right((After))
+      else Left("Not a valid combination (either left or right of the top)")
+      playerCards = gs.players.find(_.id == playerId).get
+      _ <- if (playerCards.cards.contains(card)) Right(()) else Left("Player does not have this card")
+      drawThrowable <- if (playerCards.drawThrowable.isDefined) Right(playerCards.drawThrowable.get)
+      else Left("Player does not have a draw-throwable card")
+      _ <- if (drawThrowable == card) Right(()) else Left("This is not the player's drawThrowable card")
+    } yield {
+      val newPlayer = playerCards.copy(cards = playerCards.cards.filterNot(Set(card)))
+      val newPile   = gs.pile.drawThrowCard(card, drawThrowLocation)
+      gs.copy(
+        players = gs.players.map { p => if (p.id == playerId) newPlayer else p },
+        pile = newPile
       )
     }
   }

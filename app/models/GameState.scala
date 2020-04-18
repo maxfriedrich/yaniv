@@ -8,7 +8,7 @@ object Draw extends GameAction {
   override def toString: PlayerId = "draw"
 }
 
-case class PlayerCards(id: PlayerId, cards: Seq[Card])
+case class PlayerCards(id: PlayerId, cards: Seq[Card], drawThrowable: Option[Card])
 
 sealed trait DrawSource
 object DeckSource                 extends DrawSource
@@ -33,8 +33,9 @@ object GameState {
   def newGame(players: Seq[PlayerInfo]): GameState = {
     val shuffled = Shuffle.shuffle(players.size)
     GameState(
-      players =
-        players.zip(shuffled.playerCards).map { case (player, cards) => PlayerCards(id = player.id, cards = cards) },
+      players = players.zip(shuffled.playerCards).map {
+        case (player, cards) => PlayerCards(id = player.id, cards = cards, drawThrowable = None)
+      },
       currentPlayer = players.head.id,
       nextAction = Throw,
       pile = shuffled.pile,

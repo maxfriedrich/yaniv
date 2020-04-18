@@ -41,6 +41,10 @@ object JsonImplicits {
   case class DrawCardClientResponse(source: DrawSource)
   implicit val drawCardClientResponseReads: Reads[DrawCardClientResponse] = Json.reads[DrawCardClientResponse]
 
+  case class DrawThrowCardClientResponse(card: Card)
+  implicit val drawThrowCardClientResponseReads: Reads[DrawThrowCardClientResponse] =
+    Json.reads[DrawThrowCardClientResponse]
+
   implicit val gameActionReads: Reads[GameAction] = Reads {
     case JsString("throw") => JsSuccess(Throw)
     case JsString("draw")  => JsSuccess(Draw)
