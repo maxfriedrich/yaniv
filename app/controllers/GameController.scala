@@ -3,7 +3,7 @@ package controllers
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import javax.inject.{Inject, Singleton}
-import models.GameLogic
+import models.{GameLogic, GameSeriesState, GameState}
 import play.api.http.ContentTypes
 import play.api.libs.EventSource
 import play.api.libs.json.Json
@@ -63,8 +63,9 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
         case Some(JsError(e))                                    => Left("json error: $e")
         case Some(JsSuccess(ThrowCardsClientResponse(cards), _)) => Right(cards)
       }
-      newGameState      <- GameLogic.throwCards(gameSeriesState.gameState, playerId, cards)
-      _             <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = newGameState))
+      gameState     <- getGameState(gameSeriesState)
+      newGameState  <- GameLogic.throwCards(gameState, playerId, cards)
+      _             <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = Some(newGameState)))
       gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
     } yield Ok(Json.toJson(gameStateView))
     resultOrError(result)
@@ -79,8 +80,9 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
         case Some(JsError(e))                                   => Left("json error: $e")
         case Some(JsSuccess(DrawCardClientResponse(source), _)) => Right(source)
       }
-      newGameState      <- GameLogic.drawCard(gameSeriesState.gameState, playerId, source)
-      _             <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = newGameState))
+      gameState     <- getGameState(gameSeriesState)
+      newGameState  <- GameLogic.drawCard(gameState, playerId, source)
+      _             <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = Some(newGameState)))
       gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
     } yield Ok(Json.toJson(gameStateView))
     resultOrError(result)
@@ -90,10 +92,11 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
 
   def yaniv(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
-      gameSeriesState     <- gamesService.getGameSeriesState(gameSeriesId)
-      newGameState      <- GameLogic.callYaniv(gameSeriesState.gameState, playerId)
-      _             <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = newGameState))
-      gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
+      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
+      gameState       <- getGameState(gameSeriesState)
+      newGameState    <- GameLogic.callYaniv(gameState, playerId)
+      _               <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = Some(newGameState)))
+      gameStateView   <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
     } yield Ok(Json.toJson(gameStateView))
     resultOrError(result)
   }
@@ -101,5 +104,12 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
   def resultOrError(result: Either[String, Result]): Result = result match {
     case Left(err)  => BadRequest(Json.toJson(Map("error" -> err)))
     case Right(res) => res
+  }
+
+  def getGameState(gameSeriesState: GameSeriesState): Either[String, GameState] = {
+    gameSeriesState.gameState match {
+      case Some(gs) => Right(gs)
+      case None     => Left("Game has not started")
+    }
   }
 }

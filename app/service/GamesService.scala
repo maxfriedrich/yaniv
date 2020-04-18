@@ -4,7 +4,7 @@ import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.{CompletionStrategy, Materializer, OverflowStrategy}
 import akka.stream.scaladsl.Source
-import models.{DummyGame, GameSeriesState, GameSeriesId, GameSeriesStateView, GameState, PlayerId}
+import models.{DummyGame, GameSeriesState, GameSeriesId, GameSeriesStateView, PlayerId}
 import service.ConnectionManager.{Register, Unregister, Update}
 
 import scala.collection.mutable

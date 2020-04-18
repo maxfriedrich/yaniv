@@ -6,6 +6,6 @@ case class GameSeriesState(
     id: GameSeriesId,
     version: Int,
     players: Seq[PlayerInfo],
-    gameState: GameState,
+    gameState: Option[GameState],
     scores: Map[PlayerId, Int]
 )

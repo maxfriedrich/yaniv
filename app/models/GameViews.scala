@@ -60,10 +60,22 @@ object PartialPlayerCardsView {
   }
 }
 
-case class GameSeriesStateView(id: GameSeriesId, version: Int, players: Seq[PlayerInfo], gameState: GameStateView, scores: Map[PlayerId, Int])
+case class GameSeriesStateView(
+    id: GameSeriesId,
+    version: Int,
+    players: Seq[PlayerInfo],
+    gameState: Option[GameStateView],
+    scores: Map[PlayerId, Int]
+)
 
 object GameSeriesStateView {
   def fromGameSeriesState(gameSeries: GameSeriesState, playerId: PlayerId): GameSeriesStateView = {
-    GameSeriesStateView(gameSeries.id, gameSeries.version, gameSeries.players, GameStateView.fromGameState(gameSeries.gameState, playerId), gameSeries.scores)
+    GameSeriesStateView(
+      gameSeries.id,
+      gameSeries.version,
+      gameSeries.players,
+      gameSeries.gameState.map(gs => GameStateView.fromGameState(gs, playerId)),
+      gameSeries.scores
+    )
   }
 }

@@ -68,7 +68,7 @@ object JsonImplicits {
   implicit val gameResultReads: Reads[GameResult]   = Json.reads[GameResult]
   implicit val gameResultWrites: Writes[GameResult] = Json.writes[GameResult]
 
-  implicit val playerInfoReads: Reads[PlayerInfo] = Json.reads[PlayerInfo]
+  implicit val playerInfoReads: Reads[PlayerInfo]   = Json.reads[PlayerInfo]
   implicit val playerInfoWrites: Writes[PlayerInfo] = Json.writes[PlayerInfo]
 
   implicit val playerReads: Reads[PlayerCards]         = Json.reads[PlayerCards]
@@ -86,7 +86,7 @@ object JsonImplicits {
   implicit val gameStateReads: Reads[GameState]            = Json.reads[GameState]
   implicit val gameStateViewWrites: OWrites[GameStateView] = Json.writes[GameStateView]
 
-  implicit val gameSeriesWrites: Writes[GameSeriesState] = Json.writes[GameSeriesState]
-  implicit val gameSeriesReads: Reads[GameSeriesState]   = Json.reads[GameSeriesState]
+  implicit val gameSeriesWrites: Writes[GameSeriesState]          = Json.writes[GameSeriesState]
+  implicit val gameSeriesReads: Reads[GameSeriesState]            = Json.reads[GameSeriesState]
   implicit val gameSeriesViewWrites: OWrites[GameSeriesStateView] = Json.writes[GameSeriesStateView]
 }
