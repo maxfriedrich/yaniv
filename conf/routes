@@ -1,20 +1,22 @@
 # POST    /series/new                                 controllers.SeriesController.new
 # POST    /series/:seriesId/                          controllers.SeriesControllers.join(seriesId: String)
 
-GET     /game/:gameSeriesId                                    controllers.GameController.game(gameSeriesId: String)
+GET     /game/:gameSeriesId                                     controllers.GameController.game(gameSeriesId: String)
 
-POST    /rest/game/new                                         controllers.GameController.newGame()
-POST    /rest/game/:gameSeriesId/join                          controllers.GameController.join(gameSeriesId: String)
-POST    /rest/game/:gameSeriesId/start                         controllers.GameController.join(gameSeriesId: String)
+POST    /rest/game/new                                          controllers.GameController.newGame()
+GET     /rest/game/:gameSeriesId/preStartInfo                   controllers.GameController.preStartInfo(gameSeriesId: String)
+GET     /rest/game/:gameSeriesId/preStartInfo/stream            controllers.GameController.preStartInfoStream(gameSeriesId: String)
+POST    /rest/game/:gameSeriesId/join                           controllers.GameController.join(gameSeriesId: String)
+POST    /rest/game/:gameSeriesId/start                          controllers.GameController.join(gameSeriesId: String)
 
-POST    /rest/game/:gameSeriesId/testUpdate                    controllers.GameController.testUpdate(gameSeriesId: String)
+POST    /rest/game/:gameSeriesId/testUpdate                     controllers.GameController.testUpdate(gameSeriesId: String)
 
-GET     /rest/game/:gameSeriesId/player/:playerId/state        controllers.GameController.state(gameSeriesId: String, playerId: String)
-GET     /rest/game/:gameSeriesId/player/:playerId/stream       controllers.GameController.stream(gameSeriesId: String, playerId: String)
-POST    /rest/game/:gameSeriesId/player/:playerId/throw        controllers.GameController.throwCards(gameSeriesId: String, playerId: String)
-POST    /rest/game/:gameSeriesId/player/:playerId/draw         controllers.GameController.draw(gameSeriesId: String, playerId: String)
-POST    /rest/game/:gameSeriesId/player/:playerId/drawThrow    controllers.GameController.drawThrow(gameSeriesId: String, playerId: String)
-POST    /rest/game/:gameSeriesId/player/:playerId/yaniv        controllers.GameController.yaniv(gameSeriesId: String, playerId: String)
+GET     /rest/game/:gameSeriesId/player/:playerId/state         controllers.GameController.state(gameSeriesId: String, playerId: String)
+GET     /rest/game/:gameSeriesId/player/:playerId/state/stream  controllers.GameController.stateStream(gameSeriesId: String, playerId: String)
+POST    /rest/game/:gameSeriesId/player/:playerId/throw         controllers.GameController.throwCards(gameSeriesId: String, playerId: String)
+POST    /rest/game/:gameSeriesId/player/:playerId/draw          controllers.GameController.draw(gameSeriesId: String, playerId: String)
+POST    /rest/game/:gameSeriesId/player/:playerId/drawThrow     controllers.GameController.drawThrow(gameSeriesId: String, playerId: String)
+POST    /rest/game/:gameSeriesId/player/:playerId/yaniv         controllers.GameController.yaniv(gameSeriesId: String, playerId: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

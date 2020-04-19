@@ -1,35 +1,33 @@
 package service
 
 import akka.actor.{Actor, ActorRef, Props}
-import models.{GameSeriesId, GameSeriesStateView, PlayerId}
 
-// TODO: this could probably be generic (K = (GameSeriesId, PlayerId), V = GameSeriesStateView
-class ConnectionManager extends Actor {
+class ConnectionManager[K, V] extends Actor {
   import ConnectionManager._
 
-  private val actors = Map.empty[(GameSeriesId, PlayerId), Set[ActorRef]].withDefault(_ => Set.empty[ActorRef])
+  private val actors = Map.empty[K, Set[ActorRef]].withDefault(_ => Set.empty[ActorRef])
 
-  def receive = onMessage(actors)
+  def receive: Receive = onMessage(actors)
 
-  private def onMessage(actors: Map[(GameSeriesId, PlayerId), Set[ActorRef]]): Receive = {
-    case Update(gameId, playerId, gameState) =>
+  private def onMessage(actors: Map[K, Set[ActorRef]]): Receive = {
+    case Update(key: K, value: V) =>
       //      println("Manager got update")
-      actors.getOrElse((gameId, playerId), Set.empty).foreach(_ ! gameState)
-    case Register(gameId, playerId, actorRef) =>
+      actors.getOrElse(key, Set.empty).foreach(_ ! value)
+    case Register(key: K, actorRef) =>
       //      println("Manager got register")
-      val newGamePlayerActors = actors(gameId, playerId) + actorRef
-      context.become(onMessage(actors + ((gameId, playerId) -> newGamePlayerActors)))
-    case Unregister(gameId, playerId, actorRef) =>
+      val newGamePlayerActors = actors(key) + actorRef
+      context.become(onMessage(actors + (key -> newGamePlayerActors)))
+    case Unregister(key: K, actorRef) =>
       //      println("Manager got unregister")
-      val newGamePlayerActors = actors(gameId, playerId) - actorRef
-      context.become(onMessage(actors + ((gameId, playerId) -> newGamePlayerActors)))
+      val newGamePlayerActors = actors(key) - actorRef
+      context.become(onMessage(actors + (key -> newGamePlayerActors)))
   }
 }
 
 object ConnectionManager {
-  def props: Props = Props[ConnectionManager]
+  def props[K, V]: Props = Props[ConnectionManager[K, V]]
 
-  case class Update(gameId: GameSeriesId, playerId: PlayerId, gameSeriesStateView: GameSeriesStateView)
-  case class Register(gameId: GameSeriesId, playerId: PlayerId, actorRef: ActorRef)
-  case class Unregister(gameId: GameSeriesId, playerId: PlayerId, actorRef: ActorRef)
+  case class Update[K, V](key: K, value: V)
+  case class Register[K](key: K, actorRef: ActorRef)
+  case class Unregister[K](key: K, actorRef: ActorRef)
 }

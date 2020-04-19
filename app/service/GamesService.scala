@@ -4,7 +4,7 @@ import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.{CompletionStrategy, Materializer, OverflowStrategy}
 import akka.stream.scaladsl.Source
-import models.{DummyGame, GameSeriesState, GameSeriesId, GameSeriesStateView, PlayerId}
+import models.{DummyGame, GameSeriesId, GameSeriesPreStartInfo, GameSeriesState, GameSeriesStateView, PlayerId}
 import service.ConnectionManager.{Register, Unregister, Update}
 
 import scala.collection.mutable
@@ -17,7 +17,15 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
   val gameSeriesStates = mutable.Map.empty[GameSeriesId, mutable.Buffer[GameSeriesState]]
   gameSeriesStates += DummyGame.dummyGame
 
-  val connectionManager = as.actorOf(ConnectionManager.props)
+  val preGameConnectionManager: ActorRef = as.actorOf(ConnectionManager.props[GameSeriesId, GameSeriesPreStartInfo])
+  val inGameConnectionManager: ActorRef =
+    as.actorOf(ConnectionManager.props[(GameSeriesId, PlayerId), GameSeriesStateView])
+
+  def getGameSeriesPreStartInfo(gameSeriesId: GameSeriesId): Either[String, GameSeriesPreStartInfo] =
+    gameSeriesStates.get(gameSeriesId) match {
+      case Some(series) if series.nonEmpty => Right(GameSeriesPreStartInfo.fromGameSeriesState(series.last))
+      case None                            => Left(s"Game series $gameSeriesId does not exist")
+    }
 
   def getGameSeriesState(gameSeriesId: GameSeriesId): Either[String, GameSeriesState] =
     gameSeriesStates.get(gameSeriesId) match {
@@ -45,9 +53,23 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
       case Some(series) if series.nonEmpty =>
         series.last.players.find(_.id == playerId) match {
           case Some(_) =>
-            val source = newSourceActor(connectionManager, gameSeriesId, playerId)
+            val source = newSourceActor(inGameConnectionManager, (gameSeriesId, playerId))
             Right(source)
           case _ => Left(s"Player $playerId is not a part of game $gameSeriesId")
+        }
+      case None => Left(s"Game $gameSeriesId does not exist")
+    }
+
+  def getGameSeriesPreStartInfoStream(
+      gameSeriesId: GameSeriesId
+  )(implicit ec: ExecutionContext): Either[String, Source[GameSeriesPreStartInfo, _]] =
+    gameSeriesStates.get(gameSeriesId) match {
+      case Some(series) if series.nonEmpty =>
+        series.last.gameState match {
+          case Some(_) => Left(s"Game $gameSeriesId has already started")
+          case None =>
+            val source = newSourceActor(preGameConnectionManager, gameSeriesId)
+            Right(source)
         }
       case None => Left(s"Game $gameSeriesId does not exist")
     }
@@ -66,9 +88,14 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
     gameSeriesStates.get(gameSeriesId) match {
       case Some(series) =>
         gameSeriesStates += gameSeriesId -> (series :+ gameSeriesState)
+        println("Sending pre-game start info update")
+        preGameConnectionManager ! Update(gameSeriesId, GameSeriesPreStartInfo.fromGameSeriesState(gameSeriesState))
         gameSeriesState.players.foreach { p =>
           println(s"Sending update to ${p.id}")
-          connectionManager ! Update(gameSeriesId, p.id, GameSeriesStateView.fromGameSeriesState(gameSeriesState, p.id))
+          inGameConnectionManager ! Update(
+            (gameSeriesId, p.id),
+            GameSeriesStateView.fromGameSeriesState(gameSeriesState, p.id)
+          )
         }
         Right("ok")
       case None => Left(s"Game $gameSeriesId does not exist")
@@ -77,9 +104,9 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
 }
 
 object GamesService {
-  private def newSourceActor(connectionManager: ActorRef, gameSeriesId: GameSeriesId, playerId: PlayerId)(
+  private def newSourceActor[K, V](connectionManager: ActorRef, key: K)(
       implicit ec: ExecutionContext
-  ): Source[GameSeriesStateView, ActorRef] = {
+  ): Source[V, ActorRef] = {
     Source
       .actorRef(
         completionMatcher = {
@@ -91,9 +118,8 @@ object GamesService {
       )
       .watchTermination() {
         case (actorRef: ActorRef, terminate) =>
-          println("watch termination")
-          connectionManager ! Register(gameSeriesId, playerId, actorRef)
-          terminate.onComplete(_ => connectionManager ! Unregister(gameSeriesId, playerId, actorRef))
+          connectionManager ! Register(key, actorRef)
+          terminate.onComplete(_ => connectionManager ! Unregister(key, actorRef))
           actorRef
       }
   }

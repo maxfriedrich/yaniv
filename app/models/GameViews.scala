@@ -81,3 +81,15 @@ object GameSeriesStateView {
     )
   }
 }
+
+case class GameSeriesPreStartInfo(
+    id: GameSeriesId,
+    version: Int,
+    players: Seq[PlayerInfo]
+)
+
+object GameSeriesPreStartInfo {
+  def fromGameSeriesState(gameSeries: GameSeriesState): GameSeriesPreStartInfo = {
+    GameSeriesPreStartInfo(gameSeries.id, gameSeries.version, gameSeries.players)
+  }
+}

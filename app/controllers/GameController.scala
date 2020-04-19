@@ -41,7 +41,24 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
       info = PlayerInfo(id = idService.nextId(), name = payload.name)
       newSeriesState <- GameSeriesState.addPlayer(gameSeriesState, info)
       _              <- gamesService.update(gameSeriesId, newSeriesState)
-    } yield Ok(Json.toJson("id" -> info.id))
+    } yield Ok(Json.toJson(Map("id" -> info.id)))
+    resultOrError(result)
+  }
+
+  def preStartInfo(gameSeriesId: String) = Action { request =>
+    val result = for {
+      stateView <- gamesService.getGameSeriesPreStartInfo(gameSeriesId)
+    } yield Ok(Json.toJson(stateView))
+    resultOrError(result)
+  }
+
+  def preStartInfoStream(gameSeriesId: String) = Action { request =>
+    val result = for {
+      stream <- gamesService.getGameSeriesPreStartInfoStream(gameSeriesId)
+    } yield {
+      val source: Source[String, _] = stream.map { info => "data: " + Json.toJsObject(info).toString + "\n\n" }
+      Ok.chunked(source via EventSource.flow).as(ContentTypes.EVENT_STREAM)
+    }
     resultOrError(result)
   }
 
@@ -71,7 +88,7 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
     resultOrError(result)
   }
 
-  def stream(gameSeriesId: String, playerId: String) = Action { request =>
+  def stateStream(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
       stream <- gamesService.getGameSeriesStateStream(gameSeriesId, playerId)
     } yield {
@@ -114,7 +131,8 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
       payload         <- requestJson[DrawThrowCardClientResponse](request)
       card = payload.card
-      gameState     <- getGameState(gameSeriesState)
+      gameState <- getGameState(gameSeriesState)
+      // TODO: accept draw-throw move only if the passd time since the last game state is < some threshold
       newGameState  <- GameLogic.drawThrowCard(gameState, playerId, card)
       _             <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = Some(newGameState)))
       gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
