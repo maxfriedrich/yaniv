@@ -60,7 +60,11 @@ object GameLogic {
       _ <- validateGameState(gs, playerId, Draw)
     } yield {
       val (newCard, drawThrowable, newDeck, newPile) = source match {
-        case DeckSource => (gs.deck.head, Some(gs.deck.head), gs.deck.drop(1), gs.pile)
+        case DeckSource if gs.deck.size > 1 =>
+          (gs.deck.head, Some(gs.deck.head), gs.deck.drop(1), gs.pile)
+        case DeckSource => // draw the last card, re-shuffle pile into deck
+          val reshuffled = Shuffle.reshuffle(gs.pile)
+          (gs.deck.head, Some(gs.deck.head), reshuffled.deck, reshuffled.pile)
         case PileSource(card) =>
           if (!gs.pile.drawable.filter(_.drawable).map(_.card).contains(card))
             return Left(s"Card ${card.id} is not drawable")
