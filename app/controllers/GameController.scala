@@ -67,7 +67,7 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
       newSeriesState  <- GameSeriesState.start(gameSeriesState)
       _               <- gamesService.update(gameSeriesId, newSeriesState)
-    } yield Ok(Json.toJson("ok"))
+    } yield Ok(Json.toJson(Map("ok" -> "ok")))
     resultOrError(result)
   }
 
@@ -76,7 +76,7 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
     } yield {
       gamesService.update(gameSeriesId, gameSeriesState)
-      Ok(Json.toJson("ok"))
+      Ok(Json.toJson(Map("ok" -> "ok")))
     }
     resultOrError(result)
   }
@@ -160,7 +160,7 @@ object GameController {
     for {
       content <- json match {
         case None                  => Left("invalid json")
-        case Some(JsError(e))      => Left("json error: $e")
+        case Some(JsError(e))      => Left(s"json error: $e")
         case Some(JsSuccess(t, _)) => Right(t)
       }
     } yield content
