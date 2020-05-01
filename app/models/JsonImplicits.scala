@@ -109,7 +109,7 @@ object JsonImplicits {
       case JsDefined(JsString("waitingForNextGame")) =>
         Json.reads[JsonWaitingForNextGame].reads(json).map(w => WaitingForNextGame(w.acceptedPlayers))
       case JsDefined(JsString("gameOver")) => Json.reads[JsonGameOver].reads(json).map(w => GameOver(w.winner))
-      case _ => JsError("not a valid no current game")
+      case _                               => JsError("not a valid no current game")
     }
   }
 
@@ -134,7 +134,6 @@ object JsonImplicits {
   implicit val gameSeriesConfigWrites: Writes[GameSeriesConfig] = Json.writes[GameSeriesConfig]
   implicit val gameSeriesConfigReads: Reads[GameSeriesConfig]   = Json.reads[GameSeriesConfig]
 
-
   implicit val gameStateWrites: Writes[GameState]         = Json.writes[GameState]
   implicit val gameStateReads: Reads[GameState]           = Json.reads[GameState]
   implicit val gameStateViewWrites: Writes[GameStateView] = Json.writes[GameStateView]
@@ -156,7 +155,7 @@ object JsonImplicits {
   }
 
   implicit val gameSeriesWrites: Writes[GameSeriesState]                    = Json.writes[GameSeriesState]
-//  implicit val gameSeriesReads: Reads[GameSeriesState]                      = Json.reads[GameSeriesState]
+  implicit val gameSeriesReads: Reads[GameSeriesState]                      = Json.reads[GameSeriesState]
   implicit val gameSeriesViewWrites: Writes[GameSeriesStateView]            = Json.writes[GameSeriesStateView]
   implicit val gameSeriesPreStartInfoWrites: Writes[GameSeriesPreStartInfo] = Json.writes[GameSeriesPreStartInfo]
 }

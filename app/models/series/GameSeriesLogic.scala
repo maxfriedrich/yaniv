@@ -49,7 +49,7 @@ object GameSeriesLogic {
     case None => gss.copy(state = Right(gs))
   }
 
-  private def applyPointRules(
+  private[series] def applyPointRules(
       rules: Seq[PointRule],
       players: Seq[PlayerCards],
       scores: Map[PlayerId, Int]
@@ -63,13 +63,13 @@ object GameSeriesLogic {
     }
   }
 
-  private def applyRule(rule: PointRule, hand: Set[Card], score: Int): Int = rule match {
+  private[series] def applyRule(rule: PointRule, hand: Set[Card], score: Int): Int = rule match {
     case PointRule(Hand(h), newScore) if h == hand   => newScore
     case PointRule(Score(s), newScore) if s == score => newScore
     case _                                           => score
   }
 
-  private def checkEndingScores(scores: Map[PlayerId, Int], losingScore: Int): Option[GameOver] = {
+  private[series] def checkEndingScores(scores: Map[PlayerId, Int], losingScore: Int): Option[GameOver] = {
     if (scores.values.exists(_ > losingScore))
       Some(GameOver(scores.minBy(_._2)._1)) // currently only one winner
     else

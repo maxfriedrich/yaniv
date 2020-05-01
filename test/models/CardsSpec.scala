@@ -1,13 +1,14 @@
 package models
 
+import CardsHelper.C
 import org.scalatest.FlatSpec
 
 class CardsSpec extends FlatSpec {
 
-  val h4 = Card.fromString("H4").get
-  val j1 = Card.fromString("J1").get
-  val d4 = Card.fromString("D4").get
-  val h3 = Card.fromString("D3").get
+  val h4 = C("H4")
+  val j1 = C("J1")
+  val d4 = C("D4")
+  val h3 = C("D3")
 
   "Card" should "parse cards from string correctly" in {
     val parsed = Card.fromString("H4")

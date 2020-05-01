@@ -4,7 +4,7 @@ import org.scalatest.FlatSpec
 
 class ShuffleSpec extends FlatSpec {
 
-  "Shuffle" should "not hand out duplicate cards correctly" in {
+  "Shuffle" should "not hand out duplicate cards" in {
     val shuffled = Shuffle.shuffle(numPlayers = 2, playerNumCards = 5)
     val allCards = shuffled.playerCards.flatten ++ shuffled.deck ++ shuffled.pile.top
 
