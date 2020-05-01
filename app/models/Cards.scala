@@ -38,12 +38,12 @@ trait Card {
 }
 
 object Card {
-  def fromString(id: String): Option[Card] = (id(0), id(1)) match {
-    case ('J', '1') | ('J', '2') | ('J', '3') => Some(Joker(id(1).toString.toInt))
+  def fromString(id: String): Option[Card] = (id(0), id.drop(1)) match {
+    case ('J', "1") | ('J', "2") | ('J', "3") => Some(Joker(id(1).toString.toInt))
     case (s, v) =>
       for {
         suit  <- Suits.find(_.id == s.toString)
-        value <- CardValues.find(_.id == v.toString)
+        value <- CardValues.find(_.id == v)
       } yield RegularCard(suit, value)
   }
 }
