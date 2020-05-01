@@ -66,7 +66,7 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
   )(implicit ec: ExecutionContext): Either[String, Source[GameSeriesPreStartInfo, _]] =
     gameSeriesStates.get(gameSeriesId) match {
       case Some(series) if series.nonEmpty =>
-        series.last.state match {
+        series.last.currentGame match {
           case Left(WaitingForSeriesStart) => Right(newSourceActor(preGameConnectionManager, gameSeriesId))
           case _                           => Left(s"Game $gameSeriesId has already started")
 

@@ -5,7 +5,7 @@ import models.{Card, GameState, PlayerCards, PlayerId}
 object GameSeriesLogic {
   def addPlayer(gss: GameSeriesState, playerInfo: PlayerInfo): Either[String, GameSeriesState] =
     for {
-      _ <- gss.state match {
+      _ <- gss.currentGame match {
         case Left(WaitingForSeriesStart) => Right(())
         case _                           => Left("Game series was already started")
       }
@@ -13,7 +13,7 @@ object GameSeriesLogic {
 
   def startSeries(gss: GameSeriesState): Either[String, GameSeriesState] =
     for {
-      _ <- gss.state match {
+      _ <- gss.currentGame match {
         case Left(WaitingForSeriesStart) => Right(())
         case _                           => Left("The series is already running")
       }
@@ -21,7 +21,7 @@ object GameSeriesLogic {
 
   def acceptGameEnding(gss: GameSeriesState, player: PlayerId): Either[String, GameSeriesState] =
     for {
-      newAccepted <- gss.state match {
+      newAccepted <- gss.currentGame match {
         case Left(WaitingForNextGame(accepted)) if accepted.contains(player) =>
           Left("Player has already accepted next game")
         case Left(WaitingForNextGame(accepted)) => Right(accepted ++ Set(player))

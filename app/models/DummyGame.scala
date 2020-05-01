@@ -15,7 +15,7 @@ object DummyGame {
         id = "g1",
         version = 1,
         players = Seq(PlayerInfo("p1", "Max"), series.PlayerInfo("p2", "Pauli")),
-        state = Right(
+        currentGame = Right(
           GameState(
             config = config.gameConfig,
             players = Seq(

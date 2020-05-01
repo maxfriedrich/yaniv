@@ -171,7 +171,7 @@ object GameController {
   }
 
   def getGameState(gameSeriesState: GameSeriesState): Either[String, GameState] = {
-    gameSeriesState.state match {
+    gameSeriesState.currentGame match {
       case Right(gs) => Right(gs)
       case Left(ncg) => Left(s"There is no current game: ${ncg.toString}")
     }
