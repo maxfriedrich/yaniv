@@ -110,8 +110,8 @@ object GameLogic {
       _ <- validateGameState(gs, playerId, Throw)
       player       = gs.players.find(_.id == playerId).get
       playerPoints = player.cards.map(_.endValue).sum
-      _ <- if (playerPoints <= YanivPoints) Right(())
-      else Left(s"Calling Yaniv is only allowed with <= $YanivPoints points")
+      _ <- if (playerPoints <= gs.config.yanivMaxPoints) Right(())
+      else Left(s"Calling Yaniv is only allowed with <= ${gs.config.yanivMaxPoints} points")
     } yield {
       val gameScores       = gs.players.map(p => p.id -> p.cards.map(c => c.endValue).sum).toMap
       val minPointsPlayers = gameScores.groupBy(_._2).toSeq.minBy(_._1)._2.keys.toSeq
@@ -120,7 +120,7 @@ object GameLogic {
         if (minPointsPlayers.size == 1 && minPointsPlayers.head == playerId)
           (Yaniv(playerId), playerPoints)
         else
-          (Asaf(playerId, minPointsPlayers.filter(_ != playerId).head), playerPoints + AsafPenalty)
+          (Asaf(playerId, minPointsPlayers.filter(_ != playerId).head), playerPoints + gs.config.asafPenalty)
 
       val finalScores = gameScores ++ Map(playerId -> playerScore)
 

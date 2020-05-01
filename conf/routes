@@ -1,8 +1,6 @@
 # POST    /series/new                                 controllers.SeriesController.new
 # POST    /series/:seriesId/                          controllers.SeriesControllers.join(seriesId: String)
 
-GET     /game/:gameSeriesId                                     controllers.GameController.game(gameSeriesId: String)
-
 POST    /rest/game/new                                          controllers.GameController.newGame()
 GET     /rest/game/:gameSeriesId/preStartInfo                   controllers.GameController.preStartInfo(gameSeriesId: String)
 GET     /rest/game/:gameSeriesId/preStartInfo/stream            controllers.GameController.preStartInfoStream(gameSeriesId: String)

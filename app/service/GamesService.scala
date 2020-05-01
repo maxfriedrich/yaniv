@@ -4,7 +4,8 @@ import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.{CompletionStrategy, Materializer, OverflowStrategy}
 import akka.stream.scaladsl.Source
-import models.{DummyGame, GameSeriesId, GameSeriesPreStartInfo, GameSeriesState, GameSeriesStateView, PlayerId}
+import models.series.{GameSeriesPreStartInfo, GameSeriesState, GameSeriesStateView, WaitingForSeriesStart}
+import models.{DummyGame, GameSeriesId, PlayerId}
 import service.ConnectionManager.{Register, Unregister, Update}
 
 import scala.collection.mutable
@@ -65,11 +66,10 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
   )(implicit ec: ExecutionContext): Either[String, Source[GameSeriesPreStartInfo, _]] =
     gameSeriesStates.get(gameSeriesId) match {
       case Some(series) if series.nonEmpty =>
-        series.last.gameState match {
-          case Some(_) => Left(s"Game $gameSeriesId has already started")
-          case None =>
-            val source = newSourceActor(preGameConnectionManager, gameSeriesId)
-            Right(source)
+        series.last.state match {
+          case Left(WaitingForSeriesStart) => Right(newSourceActor(preGameConnectionManager, gameSeriesId))
+          case _                           => Left(s"Game $gameSeriesId has already started")
+
         }
       case None => Left(s"Game $gameSeriesId does not exist")
     }

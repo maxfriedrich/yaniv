@@ -1,8 +1,8 @@
 package models
 
 sealed trait DrawThrowLocation
-object Before extends DrawThrowLocation
-object After  extends DrawThrowLocation
+case object Before extends DrawThrowLocation
+case object After  extends DrawThrowLocation
 
 case class Pile(
     top: Seq[Card],

@@ -1,5 +1,7 @@
 package models
 
+import models.series.{GameSeriesState, PlayerInfo}
+
 case class PileView(top: Seq[Card], drawable: Seq[DrawableCard], bottom: Int)
 
 object PileView {
@@ -57,39 +59,5 @@ case class PartialPlayerCardsView(id: PlayerId, numCards: Int) extends PlayerCar
 object PartialPlayerCardsView {
   def fromPlayerCards(player: PlayerCards): PartialPlayerCardsView = {
     PartialPlayerCardsView(player.id, player.cards.size)
-  }
-}
-
-case class GameSeriesStateView(
-    id: GameSeriesId,
-    version: Int,
-    timestamp: String,
-    players: Seq[PlayerInfo],
-    gameState: Option[GameStateView],
-    scores: Map[PlayerId, Int]
-)
-
-object GameSeriesStateView {
-  def fromGameSeriesState(gameSeries: GameSeriesState, playerId: PlayerId): GameSeriesStateView = {
-    GameSeriesStateView(
-      id = gameSeries.id,
-      version = gameSeries.version,
-      timestamp = gameSeries.timestamp,
-      players = gameSeries.players,
-      gameState = gameSeries.gameState.map(gs => GameStateView.fromGameState(gs, playerId)),
-      scores = gameSeries.scores
-    )
-  }
-}
-
-case class GameSeriesPreStartInfo(
-    id: GameSeriesId,
-    version: Int,
-    players: Seq[PlayerInfo]
-)
-
-object GameSeriesPreStartInfo {
-  def fromGameSeriesState(gameSeries: GameSeriesState): GameSeriesPreStartInfo = {
-    GameSeriesPreStartInfo(gameSeries.id, gameSeries.version, gameSeries.players)
   }
 }

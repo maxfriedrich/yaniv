@@ -9,22 +9,22 @@ sealed trait Suit {
   val icon: String
 }
 
-object Diamonds extends Suit {
+case object Diamonds extends Suit {
   val id   = "D"
   val icon = "♦"
 }
 
-object Cross extends Suit {
+case object Cross extends Suit {
   val id   = "C"
   val icon = "♣"
 }
 
-object Hearts extends Suit {
+case object Hearts extends Suit {
   val id   = "H"
   val icon = "♥"
 }
 
-object Spades extends Suit {
+case object Spades extends Suit {
   val id   = "S"
   val icon = "♠"
 }
@@ -81,10 +81,12 @@ object Cards {
     CardValue("K", 13, 10)
   )
 
+  val Jokers = Seq(Joker(1), Joker(2), Joker(3))
+
   val Deck = (for {
     suit  <- Suits
     value <- CardValues
-  } yield RegularCard(suit, value)) ++ Seq(Joker(1), Joker(2), Joker(3))
+  } yield RegularCard(suit, value)) ++ Jokers
 
   Random.setSeed(1)
   def shuffledDeck(): Seq[Card] = Random.shuffle(Deck)

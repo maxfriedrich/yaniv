@@ -7,11 +7,11 @@ object Shuffle {
 
   case class ShuffleResult(playerCards: Seq[Seq[Card]], deck: Seq[Card], pile: Pile)
 
-  def shuffle(numPlayers: Int): ShuffleResult = {
+  def shuffle(numPlayers: Int, playerNumCards: Int): ShuffleResult = {
     val shuffledDeck = Random.shuffle(Cards.Deck)
-    val playerCards  = (0 until numPlayers).map(i => shuffledDeck.slice(i * NumCards, (i + 1) * NumCards))
-    val pileTop      = shuffledDeck.slice(numPlayers * NumCards, numPlayers * NumCards + 1).head
-    val deck         = shuffledDeck.drop(numPlayers * NumCards + 1)
+    val playerCards  = (0 until numPlayers).map(i => shuffledDeck.slice(i * playerNumCards, (i + 1) * playerNumCards))
+    val pileTop      = shuffledDeck.slice(numPlayers * playerNumCards, numPlayers * playerNumCards + 1).head
+    val deck         = shuffledDeck.drop(numPlayers * playerNumCards + 1)
 
     ShuffleResult(playerCards, deck, Pile.newPile(pileTop))
   }

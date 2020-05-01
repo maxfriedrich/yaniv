@@ -5,10 +5,10 @@ import org.scalatest.FlatSpec
 class ShuffleSpec extends FlatSpec {
 
   "Shuffle" should "not hand out duplicate cards correctly" in {
-    val shuffled = Shuffle.shuffle(2)
+    val shuffled = Shuffle.shuffle(numPlayers = 2, playerNumCards = 5)
     val allCards = shuffled.playerCards.flatten ++ shuffled.deck ++ shuffled.pile.top
 
-    assert(shuffled.playerCards.map(_.size == NumCards).forall(_ == true))
+    assert(shuffled.playerCards.map(_.size == 5).forall(_ == true))
 
     assert(allCards.size == Cards.Deck.size)
     assert(allCards.distinct.size == allCards.size)

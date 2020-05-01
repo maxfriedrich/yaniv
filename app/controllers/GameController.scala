@@ -3,11 +3,12 @@ package controllers
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import javax.inject.{Inject, Singleton}
-import models.{GameLogic, GameSeriesState, GameState, PlayerInfo}
+import models.{GameLogic, GameState}
 import play.api.http.ContentTypes
 import play.api.libs.EventSource
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, BaseController, ControllerComponents, Request, Result}
+import models.series.{GameSeriesLogic, GameSeriesState, PlayerInfo}
 import models.JsonImplicits._
 import service.{GamesService, IdService}
 
@@ -22,10 +23,6 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
   val gamesService = new GamesService()
   val idService    = new IdService()
 
-  def game(gameSeriesId: String) = Action {
-    Ok(views.html.game.render())
-  }
-
   def newGame() = Action { request =>
     val gameSeries = GameSeriesState.empty(idService.nextId())
     val result = for {
@@ -39,7 +36,7 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
       payload         <- requestJson[JoinGameClientResponse](request)
       info = PlayerInfo(id = idService.nextId(), name = payload.name)
-      newSeriesState <- GameSeriesState.addPlayer(gameSeriesState, info)
+      newSeriesState <- GameSeriesLogic.addPlayer(gameSeriesState, info)
       _              <- gamesService.update(gameSeriesId, newSeriesState)
     } yield Ok(Json.toJson(Map("id" -> info.id)))
     resultOrError(result)
@@ -56,7 +53,7 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
     val result = for {
       stream <- gamesService.getGameSeriesPreStartInfoStream(gameSeriesId)
     } yield {
-      val source: Source[String, _] = stream.map { info => "data: " + Json.toJsObject(info).toString + "\n\n" }
+      val source: Source[String, _] = stream.map { info => "data: " + Json.toJson(info).toString + "\n\n" }
       Ok.chunked(source via EventSource.flow).as(ContentTypes.EVENT_STREAM)
     }
     resultOrError(result)
@@ -65,7 +62,7 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
   def start(gameSeriesId: String) = Action { request =>
     val result = for {
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
-      newSeriesState  <- GameSeriesState.start(gameSeriesState)
+      newSeriesState  <- GameSeriesLogic.startSeries(gameSeriesState)
       _               <- gamesService.update(gameSeriesId, newSeriesState)
     } yield Ok(Json.toJson(Map("ok" -> "ok")))
     resultOrError(result)
@@ -92,9 +89,7 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
     val result = for {
       stream <- gamesService.getGameSeriesStateStream(gameSeriesId, playerId)
     } yield {
-      val source: Source[String, _] = stream.map { stateView =>
-        "data: " + Json.toJsObject(stateView).toString + "\n\n"
-      }
+      val source: Source[String, _] = stream.map { stateView => "data: " + Json.toJson(stateView).toString + "\n\n" }
       Ok.chunked(source via EventSource.flow).as(ContentTypes.EVENT_STREAM)
     }
     resultOrError(result)
@@ -105,9 +100,10 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
       payload         <- requestJson[ThrowCardsClientResponse](request)
       cards = payload.cards
-      gameState     <- getGameState(gameSeriesState)
-      newGameState  <- GameLogic.throwCards(gameState, playerId, cards)
-      _             <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = Some(newGameState)))
+      gameState    <- getGameState(gameSeriesState)
+      newGameState <- GameLogic.throwCards(gameState, playerId, cards)
+      newSeriesState = GameSeriesLogic.updateGameState(gameSeriesState, newGameState)
+      _             <- gamesService.update(gameSeriesId, newSeriesState)
       gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
     } yield Ok(Json.toJson(gameStateView))
     resultOrError(result)
@@ -118,9 +114,10 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
       payload         <- requestJson[DrawCardClientResponse](request)
       source = payload.source
-      gameState     <- getGameState(gameSeriesState)
-      newGameState  <- GameLogic.drawCard(gameState, playerId, source)
-      _             <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = Some(newGameState)))
+      gameState    <- getGameState(gameSeriesState)
+      newGameState <- GameLogic.drawCard(gameState, playerId, source)
+      newSeriesState = GameSeriesLogic.updateGameState(gameSeriesState, newGameState)
+      _             <- gamesService.update(gameSeriesId, newSeriesState)
       gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
     } yield Ok(Json.toJson(gameStateView))
     resultOrError(result)
@@ -133,8 +130,9 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
       card = payload.card
       gameState <- getGameState(gameSeriesState)
       // TODO: accept draw-throw move only if the passd time since the last game state is < some threshold
-      newGameState  <- GameLogic.drawThrowCard(gameState, playerId, card)
-      _             <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = Some(newGameState)))
+      newGameState <- GameLogic.drawThrowCard(gameState, playerId, card)
+      newSeriesState = GameSeriesLogic.updateGameState(gameSeriesState, newGameState)
+      _             <- gamesService.update(gameSeriesId, newSeriesState)
       gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
     } yield Ok(Json.toJson(gameStateView))
     resultOrError(result)
@@ -145,8 +143,9 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
       gameState       <- getGameState(gameSeriesState)
       newGameState    <- GameLogic.callYaniv(gameState, playerId)
-      _               <- gamesService.update(gameSeriesId, gameSeriesState.copy(gameState = Some(newGameState)))
-      gameStateView   <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
+      newSeriesState = GameSeriesLogic.updateGameState(gameSeriesState, newGameState)
+      _             <- gamesService.update(gameSeriesId, newSeriesState)
+      gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
     } yield Ok(Json.toJson(gameStateView))
     resultOrError(result)
   }
@@ -172,9 +171,9 @@ object GameController {
   }
 
   def getGameState(gameSeriesState: GameSeriesState): Either[String, GameState] = {
-    gameSeriesState.gameState match {
-      case Some(gs) => Right(gs)
-      case None     => Left("Game has not started")
+    gameSeriesState.state match {
+      case Right(gs) => Right(gs)
+      case Left(ncg) => Left(s"There is no current game: ${ncg.toString}")
     }
   }
 }
