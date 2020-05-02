@@ -8,7 +8,7 @@ import play.api.http.ContentTypes
 import play.api.libs.EventSource
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, BaseController, ControllerComponents, Request, Result}
-import models.series.{GameSeriesLogic, GameSeriesState, PlayerInfo}
+import models.series.{GameSeriesLogic, GameSeriesPreStartInfo, GameSeriesState, GameSeriesStateView, PlayerInfo}
 import models.JsonImplicits._
 import service.{GamesService, IdService}
 
@@ -52,10 +52,7 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
   def preStartInfoStream(gameSeriesId: String) = Action { request =>
     val result = for {
       stream <- gamesService.getGameSeriesPreStartInfoStream(gameSeriesId)
-    } yield {
-      val source: Source[String, _] = stream.map { info => "data: " + Json.toJson(info).toString + "\n\n" }
-      Ok.chunked(source via EventSource.flow).as(ContentTypes.EVENT_STREAM)
-    }
+    } yield sseStream[GameSeriesPreStartInfo](stream)
     resultOrError(result)
   }
 
@@ -65,16 +62,6 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
       newSeriesState  <- GameSeriesLogic.startSeries(gameSeriesState)
       _               <- gamesService.update(gameSeriesId, newSeriesState)
     } yield Ok(Json.toJson(Map("ok" -> "ok")))
-    resultOrError(result)
-  }
-
-  def testUpdate(gameSeriesId: String) = Action { request =>
-    val result = for {
-      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
-    } yield {
-      gamesService.update(gameSeriesId, gameSeriesState)
-      Ok(Json.toJson(Map("ok" -> "ok")))
-    }
     resultOrError(result)
   }
 
@@ -88,11 +75,20 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
   def stateStream(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
       stream <- gamesService.getGameSeriesStateStream(gameSeriesId, playerId)
-    } yield {
-      val source: Source[String, _] = stream.map { stateView => "data: " + Json.toJson(stateView).toString + "\n\n" }
-      Ok.chunked(source via EventSource.flow).as(ContentTypes.EVENT_STREAM)
-    }
+    } yield sseStream[GameSeriesStateView](stream)
     resultOrError(result)
+  }
+
+  def testStream() = Action { reques =>
+    import java.time.ZonedDateTime
+    import java.time.format.DateTimeFormatter
+    import scala.concurrent.duration._
+    import scala.language.postfixOps
+
+    val df: DateTimeFormatter = DateTimeFormatter.ofPattern("HH mm ss")
+    val tickSource            = Source.tick(0 millis, 500 millis, "TICK")
+    val source                = tickSource.map(_ => "data:" + df.format(ZonedDateTime.now()) + "\n\n")
+    Ok.chunked(source via EventSource.flow).as(ContentTypes.EVENT_STREAM).withHeaders("Cache-Control" -> "no-transform")
   }
 
   def throwCards(gameSeriesId: String, playerId: String) = Action { request =>
@@ -152,7 +148,14 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
 }
 
 object GameController {
-  import play.api.mvc.Results.BadRequest
+  import play.api.mvc.Results.{BadRequest, Ok}
+
+  def sseFormat[T: Writes](item: T): String = "data: " + Json.toJson(item).toString + "\n\n"
+
+  def sseStream[T: Writes](stream: Source[T, _]): Result = {
+    val source: Source[String, _] = stream.map(sseFormat[T])
+    Ok.chunked(source via EventSource.flow).as(ContentTypes.EVENT_STREAM).withHeaders("Cache-Control" -> "no-transform")
+  }
 
   def requestJson[T: Reads](request: Request[AnyContent]): Either[String, T] = {
     val json = request.body.asJson.map(_.validate[T])

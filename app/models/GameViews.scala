@@ -12,6 +12,7 @@ object PileView {
 case class GameStateView(
     me: PlayerCards,
     otherPlayers: Seq[PlayerCardsView],
+    playerOrder: Seq[PlayerId],
     currentPlayer: PlayerId,
     nextAction: GameAction,
     pile: PileView,
@@ -32,6 +33,7 @@ object GameStateView {
     GameStateView(
       me,
       otherPlayers,
+      gameState.players.map(_.id),
       gameState.currentPlayer,
       gameState.nextAction,
       PileView.fromPile(gameState.pile),

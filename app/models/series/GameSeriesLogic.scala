@@ -41,11 +41,14 @@ object GameSeriesLogic {
         case (playerId, oldScore) => playerId -> (oldScore + ending.points.getOrElse(playerId, 0))
       }
       val newScoresAfterRules = applyPointRules(gss.config.pointRules, gs.players, newScoresBeforeRules)
+      val scoresDiff = gss.scores.map {
+        case (playerId, oldScore) => playerId -> (newScoresAfterRules(playerId) - oldScore)
+      }
       val newState = checkEndingScores(newScoresAfterRules, gss.config.losingPoints) match {
         case Some(go) => Left(go)
         case _        => Right(gs)
       }
-      gss.copy(state = newState)
+      gss.copy(state = newState, scores = newScoresAfterRules, scoresDiff = scoresDiff)
     case None => gss.copy(state = Right(gs))
   }
 

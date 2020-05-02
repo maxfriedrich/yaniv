@@ -2,7 +2,7 @@ package models
 
 object GameLogic {
 
-  def playerOrder(gs: GameState): Seq[PlayerId] = gs.players.map(_.id).sorted
+  def playerOrder(gs: GameState): Seq[PlayerId] = gs.players.map(_.id)
 
   def nextPlayer(gs: GameState): PlayerId = {
     val order        = playerOrder(gs)

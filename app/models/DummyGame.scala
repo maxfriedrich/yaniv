@@ -29,7 +29,8 @@ object DummyGame {
             ending = None
           )
         ),
-        scores = Map("p1" -> 12, "p2" -> 3)
+        scores = Map("p1" -> 12, "p2" -> 3),
+        scoresDiff = Map.empty
       )
     )
   }

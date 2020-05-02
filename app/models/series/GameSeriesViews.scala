@@ -3,13 +3,15 @@ package models.series
 import models.{GameSeriesId, GameStateView, PlayerId}
 
 case class GameSeriesStateView(
-                                config: GameSeriesConfig,
-                                id: GameSeriesId,
-                                version: Int,
-                                timestamp: String,
-                                players: Seq[PlayerInfo],
-                                currentGame: Either[NoCurrentGame, GameStateView],
-                                scores: Map[PlayerId, Int]
+    config: GameSeriesConfig,
+    id: GameSeriesId,
+    version: Int,
+    timestamp: String,
+    me: PlayerId,
+    players: Seq[PlayerInfo],
+    currentGame: Either[NoCurrentGame, GameStateView],
+    scores: Map[PlayerId, Int],
+    scoresDiff: Map[PlayerId, Int]
 )
 
 object GameSeriesStateView {
@@ -19,9 +21,11 @@ object GameSeriesStateView {
       id = gameSeries.id,
       version = gameSeries.version,
       timestamp = gameSeries.timestamp,
+      me = playerId,
       players = gameSeries.players,
       currentGame = gameSeries.currentGame.map(gs => GameStateView.fromGameState(gs, playerId)),
-      scores = gameSeries.scores
+      scores = gameSeries.scores,
+      scoresDiff = gameSeries.scoresDiff
     )
   }
 }
