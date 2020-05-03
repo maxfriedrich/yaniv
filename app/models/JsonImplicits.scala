@@ -1,7 +1,12 @@
 package models
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 import models.series._
 import play.api.libs.json._
+
+import scala.util.{Failure, Success, Try}
 
 object JsonImplicits {
   case class JoinGameClientResponse(name: String)
@@ -30,7 +35,7 @@ object JsonImplicits {
   implicit val throwCardsClientResponseReads: Reads[ThrowCardsClientResponse] = Json.reads[ThrowCardsClientResponse]
 
   implicit val drawSourceReads: Reads[DrawSource] = Reads {
-    case JsString("deck") => JsSuccess(DeckSource)
+    case JsString(Strings.Deck) => JsSuccess(DeckSource)
     case JsString(s) =>
       Card.fromString(s) match {
         case Some(c) => JsSuccess(PileSource(c))
@@ -47,31 +52,35 @@ object JsonImplicits {
     Json.reads[DrawThrowCardClientResponse]
 
   implicit val gameActionReads: Reads[GameAction] = Reads {
-    case JsString("throw") => JsSuccess(Throw)
-    case JsString("draw")  => JsSuccess(Draw)
-    case s                 => JsError(s"Not a valid game action: ${s.toString}")
+    case JsString(Strings.Throw) => JsSuccess(Throw)
+    case JsString(Strings.Draw)  => JsSuccess(Draw)
+    case s                       => JsError(s"Not a valid game action: ${s.toString}")
   }
 
   implicit val gameActionWrites: Writes[GameAction] = Writes {
-    case Throw => JsString("throw")
-    case Draw  => JsString("draw")
+    case Throw => JsString(Strings.Throw)
+    case Draw  => JsString(Strings.Draw)
   }
 
   implicit val gameEndingReads: Reads[GameEnding] = Reads { json =>
     json \ "type" match {
-      case JsDefined(JsString("yaniv")) => Json.reads[Yaniv].reads(json)
-      case JsDefined(JsString("asaf"))  => Json.reads[Asaf].reads(json)
-      case JsDefined(s)                 => JsError(s"Not a valid game ending type: ${s.toString}")
-      case _                            => JsError(s"Missing `type` field in GameEnding object")
+      case JsDefined(JsString(Strings.Yaniv)) => Json.reads[Yaniv].reads(json)
+      case JsDefined(JsString(Strings.Asaf))  => Json.reads[Asaf].reads(json)
+      case JsDefined(JsString(Strings.Empty)) => Json.reads[EmptyHand].reads(json)
+      case JsDefined(s)                       => JsError(s"Not a valid game ending type: ${s.toString}")
+      case _                                  => JsError(s"Missing `type` field in GameEnding object")
     }
   }
 
-  case class JsonYaniv(`type`: String, caller: PlayerId)
-  case class JsonAsaf(`type`: String, caller: PlayerId, winner: PlayerId)
+  case class JsonYaniv(`type`: String, caller: PlayerId, points: Int)
+  case class JsonAsaf(`type`: String, caller: PlayerId, points: Int, winner: PlayerId, winnerPoints: Int)
+  case class JsonEmptyHand(`type`: String, player: PlayerId)
 
   implicit val gameEndingWrites: Writes[GameEnding] = Writes {
-    case Yaniv(caller)        => Json.writes[JsonYaniv].writes(JsonYaniv("yaniv", caller))
-    case Asaf(caller, winner) => Json.writes[JsonAsaf].writes(JsonAsaf("asaf", caller, winner))
+    case Yaniv(caller, points) => Json.writes[JsonYaniv].writes(JsonYaniv(Strings.Yaniv, caller, points))
+    case Asaf(caller, points, winner, winnerPoints) =>
+      Json.writes[JsonAsaf].writes(JsonAsaf(Strings.Asaf, caller, points, winner, winnerPoints))
+    case EmptyHand(player) => Json.writes[JsonEmptyHand].writes(JsonEmptyHand(Strings.Empty, player))
   }
 
   implicit val gameResultReads: Reads[GameResult]   = Json.reads[GameResult]
@@ -91,25 +100,29 @@ object JsonImplicits {
   implicit val pileReads: Reads[Pile]           = Json.reads[Pile]
   implicit val pileViewWrites: Writes[PileView] = Json.writes[PileView]
 
-  case class JsonWaitingForSeriesStart(noCurrentGame: String)
-  case class JsonWaitingForNextGame(noCurrentGame: String, acceptedPlayers: Set[String])
-  case class JsonGameOver(noCurrentGame: String, winner: PlayerId)
+  case class JsonGameIsRunning(state: String)
+  case class JsonWaitingForSeriesStart(state: String)
+  case class JsonWaitingForNextGame(state: String, acceptedPlayers: Set[String])
+  case class JsonGameOver(state: String, winner: PlayerId)
 
-  implicit val noCurrentGameWrites: Writes[NoCurrentGame] = Writes {
+  implicit val highLevelStateWrites: Writes[HighLevelState] = Writes {
+    case GameIsRunning =>
+      Json.writes[JsonGameIsRunning].writes(JsonGameIsRunning(Strings.GameIsRunning))
     case WaitingForSeriesStart =>
-      Json.writes[JsonWaitingForSeriesStart].writes(JsonWaitingForSeriesStart("waitingForSeriesStart"))
+      Json.writes[JsonWaitingForSeriesStart].writes(JsonWaitingForSeriesStart(Strings.WaitingForSeriesStart))
     case WaitingForNextGame(accepted) =>
-      Json.writes[JsonWaitingForNextGame].writes(JsonWaitingForNextGame("waitingForNextGame", accepted))
-    case GameOver(winner) => Json.writes[JsonGameOver].writes(JsonGameOver("gameOver", winner))
+      Json.writes[JsonWaitingForNextGame].writes(JsonWaitingForNextGame(Strings.WaitingForNextGame, accepted))
+    case GameOver(winner) => Json.writes[JsonGameOver].writes(JsonGameOver(Strings.GameOver, winner))
   }
 
-  implicit val noCurrentGameReads: Reads[NoCurrentGame] = Reads { json =>
-    json \ "noCurrentGame" match {
-      case JsDefined(JsString("waitingForSeriesStart")) => JsSuccess(WaitingForSeriesStart)
-      case JsDefined(JsString("waitingForNextGame")) =>
+  implicit val highLevelStateReads: Reads[HighLevelState] = Reads { json =>
+    json \ Strings.State match {
+      case JsDefined(JsString(Strings.GameIsRunning))         => JsSuccess(GameIsRunning)
+      case JsDefined(JsString(Strings.WaitingForSeriesStart)) => JsSuccess(WaitingForSeriesStart)
+      case JsDefined(JsString(Strings.WaitingForNextGame)) =>
         Json.reads[JsonWaitingForNextGame].reads(json).map(w => WaitingForNextGame(w.acceptedPlayers))
-      case JsDefined(JsString("gameOver")) => Json.reads[JsonGameOver].reads(json).map(w => GameOver(w.winner))
-      case _                               => JsError("not a valid no current game")
+      case JsDefined(JsString(Strings.GameOver)) => Json.reads[JsonGameOver].reads(json).map(w => GameOver(w.winner))
+      case _                                     => JsError("not a valid no current game")
     }
   }
 
@@ -134,28 +147,38 @@ object JsonImplicits {
   implicit val gameSeriesConfigWrites: Writes[GameSeriesConfig] = Json.writes[GameSeriesConfig]
   implicit val gameSeriesConfigReads: Reads[GameSeriesConfig]   = Json.reads[GameSeriesConfig]
 
+  private val isoDateTimeFormatter                   = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+  implicit val dateTimeWrites: Writes[LocalDateTime] = Writes { date => JsString(isoDateTimeFormatter.format(date)) }
+  implicit val dateTimeReads: Reads[LocalDateTime] = Reads {
+    case JsString(s) =>
+      Try(LocalDateTime.parse(s, isoDateTimeFormatter)) match {
+        case Failure(_)        => JsError(s"Not a valid datetime: $s")
+        case Success(dateTime) => JsSuccess(dateTime)
+      }
+    case json => JsError(s"not a valid date time: $json")
+  }
+
   implicit val gameStateWrites: Writes[GameState]         = Json.writes[GameState]
   implicit val gameStateReads: Reads[GameState]           = Json.reads[GameState]
   implicit val gameStateViewWrites: Writes[GameStateView] = Json.writes[GameStateView]
-
-  implicit val noCurrentGameOrGameStateViewWrites: Writes[Either[NoCurrentGame, GameStateView]] = Writes {
-    case Left(ncg)  => Json.toJson(ncg)
-    case Right(gsv) => Json.toJson(gsv)
-  }
-
-  implicit val noCurrentGameOrGameStateWrites: Writes[Either[NoCurrentGame, GameState]] = Writes {
-    case Left(ncg)  => Json.toJson(ncg)
-    case Right(gsv) => Json.toJson(gsv)
-  }
-  implicit val noCurrentGameOrGameStateViewReads: Reads[Either[NoCurrentGame, GameState]] = Reads { json =>
-    json \ "noCurrentGame" match {
-      case JsDefined(_) => json.validate[NoCurrentGame].map(Left(_))
-      case _            => json.validate[GameState].map(Right(_))
-    }
-  }
 
   implicit val gameSeriesWrites: Writes[GameSeriesState]                    = Json.writes[GameSeriesState]
   implicit val gameSeriesReads: Reads[GameSeriesState]                      = Json.reads[GameSeriesState]
   implicit val gameSeriesViewWrites: Writes[GameSeriesStateView]            = Json.writes[GameSeriesStateView]
   implicit val gameSeriesPreStartInfoWrites: Writes[GameSeriesPreStartInfo] = Json.writes[GameSeriesPreStartInfo]
+}
+
+object Strings {
+  val Deck  = "deck"
+  val Draw  = "draw"
+  val Throw = "throw"
+  val Yaniv = "yaniv"
+  val Asaf  = "asaf"
+  val Empty = "empty"
+
+  val State                 = "state"
+  val WaitingForSeriesStart = "waitingForSeriesStart"
+  val WaitingForNextGame    = "waitingForNextGame"
+  val GameIsRunning         = "gameIsRunning"
+  val GameOver              = "gameOver"
 }

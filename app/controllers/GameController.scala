@@ -8,7 +8,15 @@ import play.api.http.ContentTypes
 import play.api.libs.EventSource
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, BaseController, ControllerComponents, Request, Result}
-import models.series.{GameSeriesLogic, GameSeriesPreStartInfo, GameSeriesState, GameSeriesStateView, PlayerInfo}
+import models.series.{
+  GameIsRunning,
+  GameSeriesConfig,
+  GameSeriesLogic,
+  GameSeriesPreStartInfo,
+  GameSeriesState,
+  GameSeriesStateView,
+  PlayerInfo
+}
 import models.JsonImplicits._
 import service.{GamesService, IdService}
 
@@ -24,7 +32,7 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
   val idService    = new IdService()
 
   def newGame() = Action { request =>
-    val gameSeries = GameSeriesState.empty(idService.nextId())
+    val gameSeries = GameSeriesState.empty(GameSeriesConfig.Default, idService.nextId())
     val result = for {
       _ <- gamesService.create(gameSeries)
     } yield Ok(Json.toJson(Map("id" -> gameSeries.id)))
@@ -60,6 +68,15 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
     val result = for {
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
       newSeriesState  <- GameSeriesLogic.startSeries(gameSeriesState)
+      _               <- gamesService.update(gameSeriesId, newSeriesState)
+    } yield Ok(Json.toJson(Map("ok" -> "ok")))
+    resultOrError(result)
+  }
+
+  def next(gameSeriesId: String, playerId: String) = Action { request =>
+    val result = for {
+      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
+      newSeriesState  <- GameSeriesLogic.acceptGameEnding(gameSeriesState, playerId)
       _               <- gamesService.update(gameSeriesId, newSeriesState)
     } yield Ok(Json.toJson(Map("ok" -> "ok")))
     resultOrError(result)
@@ -122,10 +139,10 @@ class GameController @Inject() (val controllerComponents: ControllerComponents) 
   def drawThrow(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
+      _               <- Either.cond(GameSeriesLogic.isDrawThrowTimingAccepted(gameSeriesState), (), "Draw-throw timing not accepted")
       payload         <- requestJson[DrawThrowCardClientResponse](request)
       card = payload.card
-      gameState <- getGameState(gameSeriesState)
-      // TODO: accept draw-throw move only if the passd time since the last game state is < some threshold
+      gameState    <- getGameState(gameSeriesState)
       newGameState <- GameLogic.drawThrowCard(gameState, playerId, card)
       newSeriesState = GameSeriesLogic.updateGameState(gameSeriesState, newGameState)
       _             <- gamesService.update(gameSeriesId, newSeriesState)
@@ -174,9 +191,9 @@ object GameController {
   }
 
   def getGameState(gameSeriesState: GameSeriesState): Either[String, GameState] = {
-    gameSeriesState.currentGame match {
-      case Right(gs) => Right(gs)
-      case Left(ncg) => Left(s"There is no current game: ${ncg.toString}")
+    (gameSeriesState.state, gameSeriesState.currentGame) match {
+      case (GameIsRunning, Some(gs)) => Right(gs)
+      case (noCurrentGame, _)        => Left(s"There is no current game: ${noCurrentGame.toString}")
     }
   }
 }

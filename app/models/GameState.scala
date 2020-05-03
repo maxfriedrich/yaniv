@@ -13,8 +13,9 @@ case object DeckSource            extends DrawSource
 case class PileSource(card: Card) extends DrawSource
 
 sealed trait GameEnding
-case class Yaniv(caller: PlayerId)                  extends GameEnding
-case class Asaf(caller: PlayerId, winner: PlayerId) extends GameEnding
+case class Yaniv(caller: PlayerId, points: Int)                                     extends GameEnding
+case class Asaf(caller: PlayerId, points: Int, winner: PlayerId, winnerPoints: Int) extends GameEnding
+case class EmptyHand(player: PlayerId)                                              extends GameEnding
 
 case class GameResult(ending: GameEnding, points: Map[PlayerId, Int])
 
@@ -30,7 +31,7 @@ case class GameState(
 
 object GameState {
   def newGame(config: GameConfig, players: Seq[PlayerInfo]): GameState = {
-    val shuffled = Shuffle.shuffle(players.size, config.playerNumCards)
+    val shuffled = Shuffle.shuffle(players.size, config.playerNumCards, config.deck)
     GameState(
       config = config,
       players = players.zip(shuffled.playerCards).map {

@@ -1,7 +1,5 @@
 package models
 
-import models.series.{GameSeriesState, PlayerInfo}
-
 case class PileView(top: Seq[Card], drawable: Seq[DrawableCard], bottom: Int)
 
 object PileView {

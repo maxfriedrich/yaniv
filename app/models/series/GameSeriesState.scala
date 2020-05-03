@@ -1,31 +1,35 @@
 package models.series
 
+import java.time.LocalDateTime
+
 import models.{GameSeriesId, GameState, PlayerId}
 
 case class PlayerInfo(id: PlayerId, name: String)
 
-sealed trait NoCurrentGame
-case object WaitingForSeriesStart                             extends NoCurrentGame
-case class WaitingForNextGame(acceptedPlayers: Set[PlayerId]) extends NoCurrentGame
-// TODO: Game over still needs info about cards
-case class GameOver(winner: PlayerId) extends NoCurrentGame
+sealed trait HighLevelState
+case object GameIsRunning                                     extends HighLevelState
+case object WaitingForSeriesStart                             extends HighLevelState
+case class WaitingForNextGame(acceptedPlayers: Set[PlayerId]) extends HighLevelState
+case class GameOver(winner: PlayerId)                         extends HighLevelState
 
 case class GameSeriesState(
     config: GameSeriesConfig,
     id: GameSeriesId,
     version: Int,
     players: Seq[PlayerInfo],
-    currentGame: Either[NoCurrentGame, GameState],
+    state: HighLevelState,
+    currentGame: Option[GameState],
     scores: Map[PlayerId, Int],
     scoresDiff: Map[PlayerId, Int]
 ) {
-  val timestamp: String = java.time.LocalDateTime.now.toString
+  val timestamp: LocalDateTime = java.time.LocalDateTime.now
 
   // copy forcing a version update but dumb otherwise (use GameSeriesLogic methods instead!)
   private[series] def copy(
       config: GameSeriesConfig = config,
       players: Seq[PlayerInfo] = players,
-      state: Either[NoCurrentGame, GameState] = currentGame,
+      state: HighLevelState = state,
+      currentGame: Option[GameState] = currentGame,
       scores: Map[PlayerId, Int] = scores,
       scoresDiff: Map[PlayerId, Int] = scoresDiff
   ): GameSeriesState =
@@ -34,14 +38,14 @@ case class GameSeriesState(
       id = id,
       version = version + 1,
       players = players,
-      currentGame = state,
+      state = state,
+      currentGame = currentGame,
       scores = scores,
       scoresDiff = scoresDiff
     )
-
 }
 
 object GameSeriesState {
-  def empty(id: GameSeriesId): GameSeriesState =
-    GameSeriesState(GameSeriesConfig.Default, id, 1, Seq.empty, Left(WaitingForSeriesStart), Map.empty, Map.empty)
+  def empty(config: GameSeriesConfig, id: GameSeriesId): GameSeriesState =
+    GameSeriesState(config, id, 1, Seq.empty, WaitingForSeriesStart, None, Map.empty, Map.empty)
 }

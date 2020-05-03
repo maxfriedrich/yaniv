@@ -1,38 +1,46 @@
 package models.series
 
+import java.time.{LocalDateTime, Duration}
+
 import models.{Card, GameState, PlayerCards, PlayerId}
 
 object GameSeriesLogic {
   def addPlayer(gss: GameSeriesState, playerInfo: PlayerInfo): Either[String, GameSeriesState] =
     for {
-      _ <- gss.currentGame match {
-        case Left(WaitingForSeriesStart) => Right(())
-        case _                           => Left("Game series was already started")
+      _ <- gss.state match {
+        case WaitingForSeriesStart => Right(())
+        case _                     => Left("Game series was already started")
       }
     } yield gss.copy(players = gss.players :+ playerInfo, scores = gss.scores ++ Map(playerInfo.id -> 0))
 
   def startSeries(gss: GameSeriesState): Either[String, GameSeriesState] =
     for {
-      _ <- gss.currentGame match {
-        case Left(WaitingForSeriesStart) => Right(())
-        case _                           => Left("The series is already running")
+      _ <- gss.state match {
+        case WaitingForSeriesStart => Right(())
+        case _                     => Left("The series is already running")
       }
-    } yield gss.copy(state = Right(GameState.newGame(gss.config.gameConfig, gss.players)))
+    } yield gss.copy(state = GameIsRunning, currentGame = Some(GameState.newGame(gss.config.gameConfig, gss.players)))
+
+  def isDrawThrowTimingAccepted(gss: GameSeriesState): Boolean = {
+    val timeDiff = Duration.between(gss.timestamp, LocalDateTime.now()).toMillis
+    println(s"timeDiff: $timeDiff")
+    timeDiff < gss.config.drawThrowMillis
+  }
 
   def acceptGameEnding(gss: GameSeriesState, player: PlayerId): Either[String, GameSeriesState] =
     for {
-      newAccepted <- gss.currentGame match {
-        case Left(WaitingForNextGame(accepted)) if accepted.contains(player) =>
+      newAccepted <- gss.state match {
+        case WaitingForNextGame(accepted) if accepted.contains(player) =>
           Left("Player has already accepted next game")
-        case Left(WaitingForNextGame(accepted)) => Right(accepted ++ Set(player))
-        case _                                  => Left("There is no next game to accept")
+        case WaitingForNextGame(accepted) => Right(accepted ++ Set(player))
+        case _                            => Left("There is no next game to accept")
       }
       allAccepted = newAccepted.size == gss.players.size
     } yield {
-      val newState =
-        if (allAccepted) Right(GameState.newGame(gss.config.gameConfig, gss.players))
-        else Left(WaitingForNextGame(newAccepted))
-      gss.copy(state = newState)
+      val (newState, newGame) =
+        if (allAccepted) (GameIsRunning, Some(GameState.newGame(gss.config.gameConfig, gss.players)))
+        else (WaitingForNextGame(newAccepted), None)
+      gss.copy(state = newState, currentGame = newGame)
     }
 
   def updateGameState(gss: GameSeriesState, gs: GameState): GameSeriesState = gs.ending match {
@@ -44,12 +52,10 @@ object GameSeriesLogic {
       val scoresDiff = gss.scores.map {
         case (playerId, oldScore) => playerId -> (newScoresAfterRules(playerId) - oldScore)
       }
-      val newState = checkEndingScores(newScoresAfterRules, gss.config.losingPoints) match {
-        case Some(go) => Left(go)
-        case _        => Right(gs)
-      }
-      gss.copy(state = newState, scores = newScoresAfterRules, scoresDiff = scoresDiff)
-    case None => gss.copy(state = Right(gs))
+      val newState =
+        checkSeriesEnding(newScoresAfterRules, gss.config.losingPoints).getOrElse(WaitingForNextGame(Set.empty))
+      gss.copy(state = newState, currentGame = Some(gs), scores = newScoresAfterRules, scoresDiff = scoresDiff)
+    case None => gss.copy(currentGame = Some(gs))
   }
 
   private[series] def applyPointRules(
@@ -72,7 +78,7 @@ object GameSeriesLogic {
     case _                                           => score
   }
 
-  private[series] def checkEndingScores(scores: Map[PlayerId, Int], losingScore: Int): Option[GameOver] = {
+  private[series] def checkSeriesEnding(scores: Map[PlayerId, Int], losingScore: Int): Option[GameOver] = {
     if (scores.values.exists(_ > losingScore))
       Some(GameOver(scores.minBy(_._2)._1)) // currently only one winner
     else

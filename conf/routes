@@ -13,6 +13,7 @@ POST    /rest/game/:gameSeriesId/player/:playerId/throw         controllers.Game
 POST    /rest/game/:gameSeriesId/player/:playerId/draw          controllers.GameController.draw(gameSeriesId: String, playerId: String)
 POST    /rest/game/:gameSeriesId/player/:playerId/drawThrow     controllers.GameController.drawThrow(gameSeriesId: String, playerId: String)
 POST    /rest/game/:gameSeriesId/player/:playerId/yaniv         controllers.GameController.yaniv(gameSeriesId: String, playerId: String)
+POST    /rest/game/:gameSeriesId/player/:playerId/next          controllers.GameController.next(gameSeriesId: String, playerId: String)
 
 GET     /rest/test-stream                                       controllers.GameController.testStream()
 

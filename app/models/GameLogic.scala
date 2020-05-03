@@ -26,10 +26,13 @@ object GameLogic {
   private def validateGameState(
       gs: GameState,
       playerId: PlayerId,
-      expectedAction: GameAction
+      expectedAction: GameAction,
+      drawThrow: Boolean = false
   ): Either[String, GameState] = {
-    if (gs.currentPlayer != playerId)
+    if (!drawThrow && gs.currentPlayer != playerId)
       Left(s"Current player is ${gs.currentPlayer}")
+    else if (drawThrow && previousPlayer(gs) != playerId)
+      Left(s"Previous player is ${previousPlayer(gs)}")
     else if (gs.nextAction != expectedAction)
       Left(s"Next action is ${gs.nextAction}")
     else if (gs.ending.nonEmpty)
@@ -45,7 +48,7 @@ object GameLogic {
       player = gs.players.find(_.id == playerId).get
       _ <- if (cards.forall(player.cards.contains)) Right(()) else Left("Player does not have these cards")
     } yield {
-      val newPlayer = player.copy(cards = player.cards.filterNot(cards.toSet))
+      val newPlayer = player.copy(cards = player.cards.filterNot(cards.toSet), drawThrowable = None)
       val newPile   = gs.pile.throwCards(cards)
       gs.copy(
         players = gs.players.map { p => if (p.id == playerId) newPlayer else p },
@@ -85,8 +88,9 @@ object GameLogic {
   }
 
   def drawThrowCard(gs: GameState, playerId: PlayerId, card: Card): Either[String, GameState] = {
+    println(s"current player: $playerId, previous player: ${previousPlayer(gs)}")
     for {
-      _ <- validateGameState(gs, previousPlayer(gs), Draw)
+      _ <- validateGameState(gs, playerId, Throw, drawThrow = true)
       drawThrowLocation <- if (isValidCombination(card +: gs.pile.top)) Right(Before)
       else if (isValidCombination(gs.pile.top :+ card)) Right((After))
       else Left("Not a valid combination (either left or right of the top)")
@@ -96,11 +100,16 @@ object GameLogic {
       else Left("Player does not have a draw-throwable card")
       _ <- if (drawThrowable == card) Right(()) else Left("This is not the player's drawThrowable card")
     } yield {
-      val newPlayer = playerCards.copy(cards = playerCards.cards.filterNot(Set(card)))
-      val newPile   = gs.pile.drawThrowCard(card, drawThrowLocation)
+      val newCards   = playerCards.cards.filterNot(Set(card))
+      val newPlayer  = playerCards.copy(cards = newCards, drawThrowable = None)
+      val newPlayers = gs.players.map { p => if (p.id == playerId) newPlayer else p }
+      val newPile    = gs.pile.drawThrowCard(card, drawThrowLocation)
+      val ending =
+        if (newPlayer.cards.isEmpty) Some(GameResult(EmptyHand(playerId), computeGameScores(newPlayers))) else None
       gs.copy(
         players = gs.players.map { p => if (p.id == playerId) newPlayer else p },
-        pile = newPile
+        pile = newPile,
+        ending = ending
       )
     }
   }
@@ -113,19 +122,25 @@ object GameLogic {
       _ <- if (playerPoints <= gs.config.yanivMaxPoints) Right(())
       else Left(s"Calling Yaniv is only allowed with <= ${gs.config.yanivMaxPoints} points")
     } yield {
-      val gameScores       = gs.players.map(p => p.id -> p.cards.map(c => c.endValue).sum).toMap
+      val gameScores       = computeGameScores(gs.players)
       val minPointsPlayers = gameScores.groupBy(_._2).toSeq.minBy(_._1)._2.keys.toSeq
 
       val (ending, playerScore) =
         if (minPointsPlayers.size == 1 && minPointsPlayers.head == playerId)
-          (Yaniv(playerId), playerPoints)
+          (Yaniv(playerId, playerPoints), playerPoints)
         else
-          (Asaf(playerId, minPointsPlayers.filter(_ != playerId).head), playerPoints + gs.config.asafPenalty)
+          (
+            Asaf(playerId, playerPoints, minPointsPlayers.filter(_ != playerId).head, gameScores.values.min),
+            playerPoints + gs.config.asafPenalty
+          )
 
       val finalScores = gameScores ++ Map(playerId -> playerScore)
 
       gs.copy(ending = Some(GameResult(ending, finalScores)))
     }
+
+  def computeGameScores(players: Seq[PlayerCards]): Map[PlayerId, Int] =
+    players.map(p => p.id -> p.cards.map(c => c.endValue).sum).toMap
 
   def isValidCombination(cards: Seq[Card]): Boolean = {
     if (cards.size == 1) {

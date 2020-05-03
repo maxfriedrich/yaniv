@@ -1,15 +1,18 @@
 package models.series
 
+import java.time.LocalDateTime
+
 import models.{GameSeriesId, GameStateView, PlayerId}
 
 case class GameSeriesStateView(
     config: GameSeriesConfig,
     id: GameSeriesId,
     version: Int,
-    timestamp: String,
+    timestamp: LocalDateTime,
     me: PlayerId,
     players: Seq[PlayerInfo],
-    currentGame: Either[NoCurrentGame, GameStateView],
+    state: HighLevelState,
+    currentGame: Option[GameStateView],
     scores: Map[PlayerId, Int],
     scoresDiff: Map[PlayerId, Int]
 )
@@ -23,6 +26,7 @@ object GameSeriesStateView {
       timestamp = gameSeries.timestamp,
       me = playerId,
       players = gameSeries.players,
+      state = gameSeries.state,
       currentGame = gameSeries.currentGame.map(gs => GameStateView.fromGameState(gs, playerId)),
       scores = gameSeries.scores,
       scoresDiff = gameSeries.scoresDiff

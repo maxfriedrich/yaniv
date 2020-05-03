@@ -17,6 +17,7 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
 
   val gameSeriesStates = mutable.Map.empty[GameSeriesId, mutable.Buffer[GameSeriesState]]
   gameSeriesStates += DummyGame.dummyGame
+  gameSeriesStates += DummyGame.drawThrowTest
 
   val preGameConnectionManager: ActorRef = as.actorOf(ConnectionManager.props[GameSeriesId, GameSeriesPreStartInfo])
   val inGameConnectionManager: ActorRef =
@@ -66,9 +67,9 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
   )(implicit ec: ExecutionContext): Either[String, Source[GameSeriesPreStartInfo, _]] =
     gameSeriesStates.get(gameSeriesId) match {
       case Some(series) if series.nonEmpty =>
-        series.last.currentGame match {
-          case Left(WaitingForSeriesStart) => Right(newSourceActor(preGameConnectionManager, gameSeriesId))
-          case _                           => Left(s"Game $gameSeriesId has already started")
+        series.last.state match {
+          case WaitingForSeriesStart => Right(newSourceActor(preGameConnectionManager, gameSeriesId))
+          case _                     => Left(s"Game $gameSeriesId has already started")
 
         }
       case None => Left(s"Game $gameSeriesId does not exist")
