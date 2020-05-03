@@ -19,6 +19,7 @@ case class GameSeriesState(
     players: Seq[PlayerInfo],
     state: HighLevelState,
     currentGame: Option[GameState],
+    lastWinner: Option[PlayerId],
     scores: Map[PlayerId, Int],
     scoresDiff: Map[PlayerId, Int]
 ) {
@@ -30,6 +31,7 @@ case class GameSeriesState(
       players: Seq[PlayerInfo] = players,
       state: HighLevelState = state,
       currentGame: Option[GameState] = currentGame,
+      lastWinner: Option[PlayerId] = lastWinner,
       scores: Map[PlayerId, Int] = scores,
       scoresDiff: Map[PlayerId, Int] = scoresDiff
   ): GameSeriesState =
@@ -40,6 +42,7 @@ case class GameSeriesState(
       players = players,
       state = state,
       currentGame = currentGame,
+      lastWinner = lastWinner,
       scores = scores,
       scoresDiff = scoresDiff
     )
@@ -47,5 +50,5 @@ case class GameSeriesState(
 
 object GameSeriesState {
   def empty(config: GameSeriesConfig, id: GameSeriesId): GameSeriesState =
-    GameSeriesState(config, id, 1, Seq.empty, WaitingForSeriesStart, None, Map.empty, Map.empty)
+    GameSeriesState(config, id, 1, Seq.empty, WaitingForSeriesStart, None, None, Map.empty, Map.empty)
 }

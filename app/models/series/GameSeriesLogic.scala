@@ -1,8 +1,8 @@
 package models.series
 
-import java.time.{LocalDateTime, Duration}
+import java.time.{Duration, LocalDateTime}
 
-import models.{Card, GameState, PlayerCards, PlayerId}
+import models.{Asaf, Card, EmptyHand, GameState, PlayerCards, PlayerId, Yaniv}
 
 object GameSeriesLogic {
   def addPlayer(gss: GameSeriesState, playerInfo: PlayerInfo): Either[String, GameSeriesState] =
@@ -38,15 +38,23 @@ object GameSeriesLogic {
       allAccepted = newAccepted.size == gss.players.size
     } yield {
       val (newState, newGame) =
-        if (allAccepted) (GameIsRunning, Some(GameState.newGame(gss.config.gameConfig, gss.players)))
-        else (WaitingForNextGame(newAccepted), None)
+        if (allAccepted) {
+          (GameIsRunning, Some(GameState.newGame(gss.config.gameConfig, gss.players, startingPlayer = gss.lastWinner)))
+        } else {
+          (WaitingForNextGame(newAccepted), gss.currentGame)
+        }
       gss.copy(state = newState, currentGame = newGame)
     }
 
   def updateGameState(gss: GameSeriesState, gs: GameState): GameSeriesState = gs.ending match {
-    case Some(ending) =>
+    case Some(result) =>
       val newScoresBeforeRules = gss.scores.map {
-        case (playerId, oldScore) => playerId -> (oldScore + ending.points.getOrElse(playerId, 0))
+        case (playerId, oldScore) => playerId -> (oldScore + result.points.getOrElse(playerId, 0))
+      }
+      val winner = result.ending match {
+        case Yaniv(caller, _)      => caller
+        case Asaf(_, _, winner, _) => winner
+        case EmptyHand(player)     => player
       }
       val newScoresAfterRules = applyPointRules(gss.config.pointRules, gs.players, newScoresBeforeRules)
       val scoresDiff = gss.scores.map {
@@ -54,7 +62,13 @@ object GameSeriesLogic {
       }
       val newState =
         checkSeriesEnding(newScoresAfterRules, gss.config.losingPoints).getOrElse(WaitingForNextGame(Set.empty))
-      gss.copy(state = newState, currentGame = Some(gs), scores = newScoresAfterRules, scoresDiff = scoresDiff)
+      gss.copy(
+        state = newState,
+        currentGame = Some(gs),
+        lastWinner = Some(winner),
+        scores = newScoresAfterRules,
+        scoresDiff = scoresDiff
+      )
     case None => gss.copy(currentGame = Some(gs))
   }
 

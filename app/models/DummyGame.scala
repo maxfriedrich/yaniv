@@ -31,6 +31,7 @@ object DummyGame {
             ending = None
           )
         ),
+        lastWinner = None,
         scores = Map("p1" -> 12, "p2" -> 3),
         scoresDiff = Map.empty
       )
