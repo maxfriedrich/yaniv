@@ -72,9 +72,9 @@ object JsonImplicits {
     }
   }
 
-  case class JsonYaniv(`type`: String, caller: PlayerId, points: Int)
+  case class JsonYaniv(`type`: String, winner: PlayerId, points: Int)
   case class JsonAsaf(`type`: String, caller: PlayerId, points: Int, winner: PlayerId, winnerPoints: Int)
-  case class JsonEmptyHand(`type`: String, player: PlayerId)
+  case class JsonEmptyHand(`type`: String, winner: PlayerId)
 
   implicit val gameEndingWrites: Writes[GameEnding] = Writes {
     case Yaniv(caller, points) => Json.writes[JsonYaniv].writes(JsonYaniv(Strings.Yaniv, caller, points))
