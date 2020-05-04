@@ -7,18 +7,12 @@ import models.{Asaf, Card, EmptyHand, GameState, PlayerCards, PlayerId, Yaniv}
 object GameSeriesLogic {
   def addPlayer(gss: GameSeriesState, playerInfo: PlayerInfo): Either[String, GameSeriesState] =
     for {
-      _ <- gss.state match {
-        case WaitingForSeriesStart => Right(())
-        case _                     => Left("Game series was already started")
-      }
+      _ <- Either.cond(gss.state == WaitingForSeriesStart, (), "Game series was already started")
     } yield gss.copy(players = gss.players :+ playerInfo, scores = gss.scores ++ Map(playerInfo.id -> 0))
 
   def startSeries(gss: GameSeriesState): Either[String, GameSeriesState] =
     for {
-      _ <- gss.state match {
-        case WaitingForSeriesStart => Right(())
-        case _                     => Left("The series is already running")
-      }
+      _ <- Either.cond(gss.state == WaitingForSeriesStart, (), "Game series was already started")
     } yield gss.copy(state = GameIsRunning, currentGame = Some(GameState.newGame(gss.config.gameConfig, gss.players)))
 
   def isDrawThrowTimingAccepted(gss: GameSeriesState): Boolean = {

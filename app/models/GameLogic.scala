@@ -44,9 +44,9 @@ object GameLogic {
   def throwCards(gs: GameState, playerId: PlayerId, cards: Seq[Card]): Either[String, GameState] = {
     for {
       _ <- validateGameState(gs, playerId, Throw)
-      _ <- if (isValidCombination(cards)) Right(()) else Left("Not a valid combination")
+      _ <- Either.cond(isValidCombination(cards), (), "Not a valid combination")
       player = gs.players.find(_.id == playerId).get
-      _ <- if (cards.forall(player.cards.contains)) Right(()) else Left("Player does not have these cards")
+      _ <- Either.cond(cards.forall(player.cards.contains), (), "Player does not have these cards")
     } yield {
       val newPlayer = player.copy(cards = player.cards.filterNot(cards.toSet), drawThrowable = None)
       val newPile   = gs.pile.throwCards(cards)
@@ -90,15 +90,16 @@ object GameLogic {
   def drawThrowCard(gs: GameState, playerId: PlayerId, card: Card): Either[String, GameState] = {
     println(s"current player: $playerId, previous player: ${previousPlayer(gs)}")
     for {
-      _ <- validateGameState(gs, playerId, Throw, drawThrow = true)
-      drawThrowLocation <- if (isValidCombination(card +: gs.pile.top)) Right(Before)
-      else if (isValidCombination(gs.pile.top :+ card)) Right((After))
-      else Left("Not a valid combination (either left or right of the top)")
+      _                 <- validateGameState(gs, playerId, Throw, drawThrow = true)
+      drawThrowLocation <- findDrawThrowLocation(card, gs.pile.top)
       playerCards = gs.players.find(_.id == playerId).get
-      _ <- if (playerCards.cards.contains(card)) Right(()) else Left("Player does not have this card")
-      drawThrowable <- if (playerCards.drawThrowable.isDefined) Right(playerCards.drawThrowable.get)
-      else Left("Player does not have a draw-throwable card")
-      _ <- if (drawThrowable == card) Right(()) else Left("This is not the player's drawThrowable card")
+      _ <- Either.cond(playerCards.cards.contains(card), (), "Player does not have this card")
+      drawThrowable <- Either.cond(
+        playerCards.drawThrowable.isDefined,
+        playerCards.drawThrowable.get,
+        "Player does not have a draw-throwable card"
+      )
+      _ <- Either.cond(drawThrowable == card, (), "This is not the player's drawThrowable card")
     } yield {
       val newCards   = playerCards.cards.filterNot(Set(card))
       val newPlayer  = playerCards.copy(cards = newCards, drawThrowable = None)
@@ -119,8 +120,11 @@ object GameLogic {
       _ <- validateGameState(gs, playerId, Throw)
       player       = gs.players.find(_.id == playerId).get
       playerPoints = player.cards.map(_.endValue).sum
-      _ <- if (playerPoints <= gs.config.yanivMaxPoints) Right(())
-      else Left(s"Calling Yaniv is only allowed with <= ${gs.config.yanivMaxPoints} points")
+      _ <- Either.cond(
+        playerPoints <= gs.config.yanivMaxPoints,
+        (),
+        s"Calling Yaniv is only allowed with <= ${gs.config.yanivMaxPoints} points"
+      )
     } yield {
       val gameScores       = computeGameScores(gs.players)
       val minPointsPlayers = gameScores.groupBy(_._2).toSeq.minBy(_._1)._2.keys.toSeq
@@ -181,5 +185,12 @@ object GameLogic {
         }
       }
       ._1
+  }
+
+  // preferring after because it seems more natural
+  private def findDrawThrowLocation(card: Card, top: Seq[Card]): Either[String, DrawThrowLocation] = {
+    if (isValidCombination(top :+ card)) Right(After)
+    else if (isValidCombination(card +: top)) Right(Before)
+    else Left("Not a valid combination (either left or right of the top)")
   }
 }
