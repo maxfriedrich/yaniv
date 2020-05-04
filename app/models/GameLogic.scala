@@ -48,10 +48,12 @@ object GameLogic {
       player = gs.players.find(_.id == playerId).get
       _ <- Either.cond(cards.forall(player.cards.contains), (), "Player does not have these cards")
     } yield {
-      val newPlayers = gs.players.map { p => p.id match {
-        case id if id == playerId => p.copy(cards = player.cards.filterNot(cards.toSet), drawThrowable = None)
-        case _ => p.copy(drawThrowable = None)
-      }}
+      val newPlayers = gs.players.map { p =>
+        p.id match {
+          case id if id == playerId => p.copy(cards = player.cards.filterNot(cards.toSet), drawThrowable = None)
+          case _                    => p.copy(drawThrowable = None)
+        }
+      }
       gs.copy(
         players = newPlayers,
         nextAction = Draw,
