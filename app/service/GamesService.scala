@@ -18,6 +18,7 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
   val gameSeriesStates = mutable.Map.empty[GameSeriesId, mutable.Buffer[GameSeriesState]]
   gameSeriesStates += DummyGame.dummyGame
   gameSeriesStates += DummyGame.drawThrowTest
+  gameSeriesStates += DummyGame.betweenGames
 
   val preGameConnectionManager: ActorRef = as.actorOf(ConnectionManager.props[GameSeriesId, GameSeriesPreStartInfo])
   val inGameConnectionManager: ActorRef =

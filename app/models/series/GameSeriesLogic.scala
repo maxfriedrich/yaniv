@@ -43,17 +43,24 @@ object GameSeriesLogic {
   def updateGameState(gss: GameSeriesState, gs: GameState): GameSeriesState = gs.ending match {
     case Some(result) =>
       val newScoresBeforeRules = gss.scores.map {
-        case (playerId, oldScore) => playerId -> (oldScore + result.points.getOrElse(playerId, 0))
+        case (playerId, oldScore) => playerId -> (oldScore + result.points(playerId))
       }
       val winner = result.ending match {
         case Yaniv(caller, _)      => caller
         case Asaf(_, _, winner, _) => winner
         case EmptyHand(player)     => player
       }
-      val newScoresAfterRules = applyPointRules(gss.config.pointRules, gs.players, newScoresBeforeRules)
+      val excludedFromRules = result.points.filter { case (playerId, score) => score == 0 }.keys.toSet
+      val newScoresAfterRules =
+        applyPointRules(gss.config.pointRules, gs.players, newScoresBeforeRules, excludedFromRules)
+
       val scoresDiff = gss.scores.map {
-        case (playerId, oldScore) => playerId -> (newScoresAfterRules(playerId) - oldScore)
+        case (playerId, oldScore) =>
+          val firstDiff  = newScoresBeforeRules(playerId) - oldScore
+          val secondDiff = newScoresAfterRules(playerId) - newScoresBeforeRules(playerId)
+          playerId -> Seq(firstDiff, secondDiff).filter(_ != 0)
       }
+
       val newState =
         checkSeriesEnding(newScoresAfterRules, gss.config.losingPoints).getOrElse(WaitingForNextGame(Set.empty))
       gss.copy(
@@ -69,22 +76,25 @@ object GameSeriesLogic {
   private[series] def applyPointRules(
       rules: Seq[PointRule],
       players: Seq[PlayerCards],
-      scores: Map[PlayerId, Int]
+      scores: Map[PlayerId, Int],
+      excludedFromScoreRules: Set[PlayerId]
   ): Map[PlayerId, Int] = {
     val playerCards = players.map(p => p.id -> p.cards)
 
     rules.foldLeft(scores) { (acc, rule) =>
       playerCards.map {
-        case (playerId, hand) => playerId -> applyRule(rule, hand.toSet, acc(playerId))
+        case (playerId, hand) =>
+          playerId -> applyRule(rule, hand.toSet, acc(playerId), excludedFromScoreRules(playerId))
       }.toMap
     }
   }
 
-  private[series] def applyRule(rule: PointRule, hand: Set[Card], score: Int): Int = rule match {
-    case PointRule(Hand(h), newScore) if h == hand   => newScore
-    case PointRule(Score(s), newScore) if s == score => newScore
-    case _                                           => score
-  }
+  private[series] def applyRule(rule: PointRule, hand: Set[Card], score: Int, excludedFromScoreRules: Boolean): Int =
+    rule match {
+      case PointRule(Hand(h), newScore) if h == hand                              => newScore
+      case PointRule(Score(s), newScore) if s == score && !excludedFromScoreRules => newScore
+      case _                                                                      => score
+    }
 
   private[series] def checkSeriesEnding(scores: Map[PlayerId, Int], losingScore: Int): Option[GameOver] = {
     if (scores.values.exists(_ > losingScore))

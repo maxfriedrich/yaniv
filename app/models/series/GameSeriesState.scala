@@ -21,7 +21,7 @@ case class GameSeriesState(
     currentGame: Option[GameState],
     lastWinner: Option[PlayerId],
     scores: Map[PlayerId, Int],
-    scoresDiff: Map[PlayerId, Int]
+    scoresDiff: Map[PlayerId, Seq[Int]]
 ) {
   val timestamp: LocalDateTime = java.time.LocalDateTime.now
 
@@ -33,7 +33,7 @@ case class GameSeriesState(
       currentGame: Option[GameState] = currentGame,
       lastWinner: Option[PlayerId] = lastWinner,
       scores: Map[PlayerId, Int] = scores,
-      scoresDiff: Map[PlayerId, Int] = scoresDiff
+      scoresDiff: Map[PlayerId, Seq[Int]] = scoresDiff
   ): GameSeriesState =
     GameSeriesState(
       config = config,

@@ -1,7 +1,6 @@
 package models
 
-import models.Shuffle.ShuffleResult
-import models.series.{GameIsRunning, GameSeriesConfig, GameSeriesLogic, GameSeriesState, PlayerInfo}
+import models.series.{GameIsRunning, GameSeriesConfig, GameSeriesLogic, GameSeriesState, PlayerInfo, WaitingForNextGame}
 
 import scala.collection.mutable
 
@@ -53,6 +52,37 @@ object DummyGame {
 
     mutable.Buffer(
       state: _*
+    )
+  }
+
+  val betweenGames = "g3" -> {
+    val config   = GameSeriesConfig.Default
+    val shuffled = Shuffle.shuffle(2, config.gameConfig.playerNumCards, config.gameConfig.deck)
+    mutable.Buffer(
+      GameSeriesState(
+        config,
+        id = "g3",
+        version = 1,
+        players = Seq(PlayerInfo("p1", "Max"), series.PlayerInfo("p2", "Pauli")),
+        state = WaitingForNextGame(Set("p1")),
+        currentGame = Some(
+          GameState(
+            config = config.gameConfig,
+            players = Seq(
+              PlayerCards("p1", Seq.empty, None),
+              PlayerCards("p2", Seq.empty, None)
+            ),
+            currentPlayer = "p1",
+            nextAction = Throw,
+            pile = shuffled.pile,
+            deck = shuffled.deck,
+            ending = Some(GameResult(Yaniv("p1", 2), Map("p1" -> 2, "p2" -> 4)))
+          )
+        ),
+        lastWinner = None,
+        scores = Map("p1"     -> 25, "p2"          -> 15),
+        scoresDiff = Map("p1" -> Seq(2, -25), "p2" -> Seq(4))
+      )
     )
   }
 }

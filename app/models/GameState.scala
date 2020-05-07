@@ -18,6 +18,7 @@ sealed trait GameEnding {
 case class Yaniv(winner: PlayerId, points: Int)                                     extends GameEnding
 case class Asaf(caller: PlayerId, points: Int, winner: PlayerId, winnerPoints: Int) extends GameEnding
 case class EmptyHand(winner: PlayerId)                                              extends GameEnding
+
 case class GameResult(ending: GameEnding, points: Map[PlayerId, Int])
 
 case class GameState(

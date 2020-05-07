@@ -14,7 +14,7 @@ case class GameSeriesStateView(
     state: HighLevelState,
     currentGame: Option[GameStateView],
     scores: Map[PlayerId, Int],
-    scoresDiff: Map[PlayerId, Int]
+    scoresDiff: Map[PlayerId, Seq[Int]]
 )
 
 object GameSeriesStateView {
