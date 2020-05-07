@@ -56,7 +56,7 @@ case class RegularCard(suit: Suit, value: CardValue) extends Card {
 
 case class Joker(number: Int) extends Card {
   val id         = s"J$number"
-  val gameString = "J"
+  val gameString = "☆J"
   val endValue   = 0
 
 }
