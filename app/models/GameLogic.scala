@@ -44,6 +44,7 @@ object GameLogic {
   def throwCards(gs: GameState, playerId: PlayerId, cards: Seq[Card]): Either[String, GameState] = {
     for {
       _ <- validateGameState(gs, playerId, Throw)
+      _ <- Either.cond(cards.distinct.size == cards.size, (), "Duplicate cards")
       _ <- Either.cond(isValidCombination(cards), (), "Not a valid combination")
       player = gs.players.find(_.id == playerId).get
       _ <- Either.cond(cards.forall(player.cards.contains), (), "Player does not have these cards")
