@@ -11,7 +11,7 @@ case class PointRule(condition: PointRuleCondition, newPoints: Int)
 object PointRules {
   val Rules = Seq(
     PointRule(Hand(Cards.Jokers.toSet), 0),
-    PointRule(Score(100), 50),
-    PointRule(Score(50), 25)
+    PointRule(Score(50), 25),
+    PointRule(Score(100), 50)
   )
 }
