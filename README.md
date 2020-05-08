@@ -1,4 +1,4 @@
-# yaniv ![CI](https://github.com/maxfriedrich/yaniv/workflows/CI/badge.svg) ![Production build](https://github.com/maxfriedrich/yaniv/workflows/Production%20build/badge.svg)
+# yaniv [![CI](https://github.com/maxfriedrich/yaniv/workflows/CI/badge.svg)](https://github.com/maxfriedrich/yaniv/actions?query=workflow%3ACI) [![Production build](https://github.com/maxfriedrich/yaniv/workflows/Production%20build/badge.svg)](https://github.com/maxfriedrich/yaniv/actions?query=workflow%3A%22Production+build%22)
 
 A WIP implementation of the [Yaniv](https://en.wikipedia.org/wiki/Yaniv_(card_game)) card game
 as a REST API with [Server-sent events](https://en.wikipedia.org/wiki/Server-sent_events) push
