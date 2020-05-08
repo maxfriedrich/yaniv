@@ -1,0 +1,58 @@
+name: Production build
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - name: Set up Node 12
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12
+
+    - run: npm install
+      working-directory: frontend
+    - name: Frontend Build
+      run: npm run build
+      working-directory: frontend
+
+    - name: Check format
+      run: sbt scalafmtCheckAll
+    - name: Run Scala tests
+      run: sbt test
+    - name: Scala production build
+      run: sbt dist
+    - name: Deploy to Uberspace
+      uses: easingthemes/ssh-deploy@v2.1.2
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.DEPLOYMENT_SSH_PRIVATE_KEY }}
+        REMOTE_HOST: ${{ secrets.DEPLOYMENT_SSH_HOST }}
+        REMOTE_USER: ${{ secrets.DEPLOYMENT_SSH_USER }}
+        SOURCE: target/universal/yaniv-*.zip
+        TARGET: /home/${{ secrets.DEPLOYMENT_SSH_USER }}/yaniv
+        ARGS: "-rltgoDzvO --delete"
+    - name: Restart production service
+      uses: appleboy/ssh-action@v0.0.9
+      with:
+        host: ${{ secrets.DEPLOYMENT_SSH_HOST }}
+        username: ${{ secrets.DEPLOYMENT_SSH_USER }}
+        key: ${{ secrets.DEPLOYMENT_SSH_PRIVATE_KEY }}
+        script: |
+          cd yaniv
+          supervisorctl stop yaniv
+          rm -rf current
+          unzip -o yaniv-*.zip
+          rm yaniv-*.zip
+          mv yaniv-* current
+          supervisorctl start yaniv
+        script_stop: true
+        debug: true
