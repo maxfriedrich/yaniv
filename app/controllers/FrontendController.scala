@@ -5,11 +5,11 @@ import javax.inject.{Inject, Singleton}
 import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents, Request, Result}
 
 @Singleton
-class FrontendController @Inject() (val controllerComponents: ControllerComponents, assets: Assets) extends BaseController {
+class FrontendController @Inject() (val controllerComponents: ControllerComponents, assets: Assets)
+    extends BaseController {
 
   def assetOrDefault(resource: String = "") =
     if (resource.contains("frontend/")) {
-      println(resource)
       assets.at(resource)
     } else {
       frontendIndexAction()
