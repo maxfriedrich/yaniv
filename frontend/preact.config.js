@@ -8,5 +8,7 @@ export default (config, env, helpers) => {
                 changeHost: true
             }
         ]
+    } else {
+        config.output.publicPath = '/frontend/'
     }
 }

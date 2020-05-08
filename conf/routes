@@ -17,5 +17,5 @@ POST    /rest/game/:gameSeriesId/player/:playerId/next          controllers.Game
 
 GET     /rest/test-stream                                       controllers.GameController.testStream()
 
-# Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
+GET     /*file                                                  controllers.FrontendController.assetOrDefault(file)
+GET     /                                                       controllers.FrontendController.index()

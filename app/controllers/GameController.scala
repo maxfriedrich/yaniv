@@ -21,11 +21,10 @@ import models.JsonImplicits._
 import service.{GamesService, IdService}
 
 @Singleton
-class GameController @Inject() (val controllerComponents: ControllerComponents) extends BaseController {
+class GameController @Inject() (implicit as: ActorSystem, val controllerComponents: ControllerComponents) extends BaseController {
 
   import GameController._
 
-  implicit val as = ActorSystem("yaniv")
   implicit val ec = as.dispatcher
 
   val gamesService = new GamesService()
