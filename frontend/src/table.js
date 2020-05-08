@@ -2,7 +2,7 @@ export const Pile = ({ pile, disabled, drawAction, cardColor }) => (
 	<div class="pile-container">
 		<div class="top-container">
 			{pile.top.map(card =>
-				(<div className="game-card pile-card inactive">{card.gameString}</div>)
+				(<div className={`game-card pile-card inactive ${cardColor(card)}`}>{card.gameString}</div>)
 			)}
 		</div>
 		<div class="drawable-container">
