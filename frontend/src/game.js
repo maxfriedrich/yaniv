@@ -29,6 +29,7 @@ export class Game extends Component {
 				scoresDiff: {}
 			}
 		};
+		this.scheduled = null;
 	}
 
 	isCurrentGame = () => this.state.serverState.state.state === 'gameIsRunning';
@@ -98,7 +99,10 @@ export class Game extends Component {
 				return;
 			}
 			if (newServerState.state.state === 'gameIsRunning') {
-				const newSortedCards = this.updateSortedCards(newServerState.currentGame.me.cards, newServerState.currentGame.me.drawThrowable);
+				const isNewGame = this.state.serverState.state === 'waitingForNextGame';
+				const newSortedCards = isNewGame ?
+					currentGame.me.cards.sort((a, b) => a.endValue - b.endValue)
+					: this.updateSortedCards(newServerState.currentGame.me.cards, newServerState.currentGame.me.drawThrowable);
 				this.setState({ serverState: newServerState, sortedCards: newSortedCards, cardOnDeck: null });
 			}
 			else {
@@ -164,7 +168,8 @@ export class Game extends Component {
 				}
 				else {
 					this.setState({ serverState: newServerState, cardOnDeck: newServerState.currentGame.me.drawThrowable });
-					setTimeout(() => {
+					clearTimeout(this.scheduled);
+					this.scheduled = setTimeout(() => {
 						if (this.state.cardOnDeck) {
 							console.log('scheduled');
 							const newSortedCards = this.updateSortedCards(newServerState.currentGame.me.cards, []);
