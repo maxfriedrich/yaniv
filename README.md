@@ -4,6 +4,8 @@ A WIP implementation of the [Yaniv](https://en.wikipedia.org/wiki/Yaniv_(card_ga
 as a REST API with [Server-sent events](https://en.wikipedia.org/wiki/Server-sent_events) push
 and a [Preact frontend](frontend).
 
+Try it out on [maxfrie.uber.space](https://maxfrie.uber.space)! (automatically deployed from the master branch using the "production build" action)
+
 ## Development mode
 
 - Run the backend on localhost:9000:
