@@ -40,14 +40,14 @@ export class Game extends Component {
 	myName = () => this.state.serverState.players.find(p => p.id === this.state.serverState.me).name;
 
 	playerCards = (playerId) => {
-		if (!this.isCurrentGame()) {
+		if (!this.isCurrentGame() && !this.isPastGame()) {
 			return null;
 		}
 		if (playerId === this.state.serverState.me) {
 			return this.state.serverState.currentGame.me.cards.length;
 		}
 		const otherPlayer = this.state.serverState.currentGame.otherPlayers.find(p => p.id === playerId);
-		return otherPlayer ? otherPlayer.numCards : 0;
+		return otherPlayer.cards ? otherPlayer.cards : otherPlayer.numCards;
 	}
 
 	playerInfo = () => {

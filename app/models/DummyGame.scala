@@ -70,8 +70,8 @@ object DummyGame {
           GameState(
             config = config.gameConfig,
             players = Seq(
-              PlayerCards("p1", Seq.empty, None),
-              PlayerCards("p2", Seq.empty, None)
+              PlayerCards("p1", shuffled.playerCards(0), None),
+              PlayerCards("p2", shuffled.playerCards(1), None)
             ),
             currentPlayer = "p1",
             nextAction = Throw,

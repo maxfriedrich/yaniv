@@ -5,7 +5,7 @@ const cardsStrings = (cards) => {
 	if (typeof cards === 'number') {
 		return [cards];
 	}
-	return cards.map(c => c.gameRepresentation.join('')); // TODO this is never shown
+	return cards.sort((a, b) => a.endValue - b.endValue).map(c => c.gameRepresentation.join(''));
 };
 
 const renderScoreDiff = (scores) => {
