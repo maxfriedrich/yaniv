@@ -200,7 +200,7 @@ export class Join extends Component {
 						</div>
 					</div>
 				)}
-				{debug ? (<pre>{JSON.stringify(this.state)} {JSON.stringify(this.props)}</pre>) : <div/>}
+				{debug ? (<pre>{JSON.stringify(this.state)} {JSON.stringify(this.props)}</pre>) : <div />}
 			</div>
 		);
 	}
