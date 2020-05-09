@@ -23,10 +23,10 @@ object JsonImplicits {
     case e => JsError(s"Not a valid card id: $e")
   }
 
-  case class JsonCard(id: String, gameString: String, endValue: Int) extends Card
+  case class JsonCard(id: String, gameRepresentation: Seq[String], endValue: Int) extends Card
 
   implicit val cardWrites: Writes[Card] = Writes { card =>
-    Json.writes[JsonCard].writes(JsonCard(card.id, card.gameString, card.endValue))
+    Json.writes[JsonCard].writes(JsonCard(card.id, card.gameRepresentation, card.endValue))
   }
   implicit val drawableCardReads: Reads[DrawableCard]   = Json.reads[DrawableCard]
   implicit val drawableCardWrites: Writes[DrawableCard] = Json.writes[DrawableCard]

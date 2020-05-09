@@ -19,14 +19,15 @@
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	font-size: 2.5vh;
-	/* text-align: center; */
+	font-size: 120%;
+	line-height: 120%;
+	text-align: center;
 	background-color: white;
 	height: 10vh;
-	min-width: 60px;
-	width: calc(100% - 1vh);
+	min-width: 4vw;
+	width: calc(100% - 1vw);
 	vertical-align: middle;
-	margin: 0 0.5vh;
+	margin: 0 0.5vw;
 	border: 1px solid #ccc;
 	border-radius: 10px;
 }
@@ -106,7 +107,7 @@
 }
 
 .pile-container {
-	width: 50%;
+	width: 70%;
 }
 
 .top-container {
@@ -130,13 +131,19 @@
 	margin: -7vh auto 0;
 }
 
+// card size = 1/5 * full width - 1vw == 20% - 1vw
+// in 70% wide pile container: 100% * 2/7 - 1vw
+
 .pile-card {
 	position: relative;
-	width: calc(40% - 1vh);
+	max-width: calc(100% * (2/7) - 1vw);
+	overflow: hidden;
 }
 
+// in 30% wide container: 100% * 2/3 - 1vw
+
 .deck-card {
-	width: calc(40% - 1vh);
+	width: calc(100% * (2/3) - 1vw);
 }
 
 .deck {
@@ -144,7 +151,7 @@
 }
 
 .deck-container {
-	width: 50%;
+	width: 30%;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
