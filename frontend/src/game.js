@@ -253,15 +253,15 @@ export class Game extends Component {
 			<Scores players={this.playerInfo()} showScoreDiff={serverState && (serverState.state.state === 'waitingForNextGame' || serverState.state.state === 'gameOver')} />
 
 			<div class="card bg-light my-2">
-				{this.isCurrentGame() ? (
+				{this.isCurrentGame() || this.isPastGame() ? (
 					<div class="table-container">
 						<Pile pile={serverState.currentGame.pile}
-							disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'draw'}
+							disabled={!this.isCurrentGame() || !this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'draw'}
 							drawAction={this.drawFromPile}
 						/>
 						<Deck deck={serverState.currentGame.deck}
 							cardOnDeck={cardOnDeck}
-							disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'draw'}
+							disabled={!this.isCurrentGame() ||!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'draw'}
 							drawAction={this.drawFromDeck}
 							drawThrowAction={this.drawThrow}
 						/>
