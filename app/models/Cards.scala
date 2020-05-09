@@ -33,7 +33,7 @@ case class CardValue(id: String, position: Int, endValue: Int)
 
 trait Card {
   val id: String
-  val gameString: String
+  val gameRepresentation: Seq[String]
   val endValue: Int
 }
 
@@ -50,13 +50,13 @@ object Card {
 
 case class RegularCard(suit: Suit, value: CardValue) extends Card {
   val id         = suit.id + value.id
-  val gameString = suit.icon + value.id
+  val gameRepresentation = Seq(suit.icon, value.id)
   val endValue   = value.endValue
 }
 
 case class Joker(number: Int) extends Card {
   val id         = s"J$number"
-  val gameString = "☆J"
+  val gameRepresentation = Seq("☆", "J")
   val endValue   = 0
 
 }

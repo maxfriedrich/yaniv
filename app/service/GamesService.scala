@@ -19,6 +19,7 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
   gameSeriesStates += DummyGame.dummyGame
   gameSeriesStates += DummyGame.drawThrowTest
   gameSeriesStates += DummyGame.betweenGames
+  gameSeriesStates += DummyGame.fiveCardsOnPile
 
   val preGameConnectionManager: ActorRef = as.actorOf(ConnectionManager.props[GameSeriesId, GameSeriesPreStartInfo])
   val inGameConnectionManager: ActorRef =
