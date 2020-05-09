@@ -89,18 +89,29 @@ object DummyGame {
 
   val fiveCardsOnPile = "g4" -> {
     val config = GameSeriesConfig.Default
-    val shuffled = ShuffleResult(Seq(Seq(
-      Card.fromString("H7").get,
-      Card.fromString("H8").get,
-      Card.fromString("H9").get,
-      Card.fromString("H10").get,
-      Card.fromString("HJ").get
-    )), deck = Cards.Deck,
-      pile = Pile(Seq(Card.fromString("H2").get,
-        Card.fromString("H3").get,
-        Card.fromString("H4").get,
-        Card.fromString("H5").get,
-        Card.fromString("H6").get), Seq.empty, Seq.empty))
+    val shuffled = ShuffleResult(
+      Seq(
+        Seq(
+          Card.fromString("H7").get,
+          Card.fromString("H8").get,
+          Card.fromString("H9").get,
+          Card.fromString("H10").get,
+          Card.fromString("HJ").get
+        )
+      ),
+      deck = Cards.Deck,
+      pile = Pile(
+        Seq(
+          Card.fromString("H2").get,
+          Card.fromString("H3").get,
+          Card.fromString("H4").get,
+          Card.fromString("H5").get,
+          Card.fromString("H6").get
+        ),
+        Seq.empty,
+        Seq.empty
+      )
+    )
 
     mutable.Buffer(
       GameSeriesState(
@@ -121,7 +132,7 @@ object DummyGame {
           )
         ),
         lastWinner = None,
-        scores = Map("p1" -> 0),
+        scores = Map("p1"     -> 0),
         scoresDiff = Map("p1" -> Seq(0))
       )
     )
