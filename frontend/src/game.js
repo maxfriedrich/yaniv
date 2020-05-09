@@ -33,6 +33,8 @@ export class Game extends Component {
 
 	isCurrentGame = () => this.state.serverState.state.state === 'gameIsRunning';
 
+	isPastGame = () => this.state.serverState.state.state === 'waitingForNextGame' || this.state.serverState.state.state === 'gameOver';
+
 	isCurrentPlayer = () => this.isCurrentGame() && this.state.serverState.currentGame.currentPlayer === this.state.serverState.me;
 
 	myName = () => this.state.serverState.players.find(p => p.id === this.state.serverState.me).name;
@@ -100,8 +102,8 @@ export class Game extends Component {
 				this.setState({ serverState: newServerState, sortedCards: newSortedCards, cardOnDeck: null });
 			}
 			else {
-				console.log('no game running, setting state anyway');
-				this.setState({ serverState: newServerState });
+				const newSortedCards = this.updateSortedCards(newServerState.currentGame.me.cards, []);
+				this.setState({ serverState: newServerState, sortedCards: newSortedCards, cardOnDeck: null });
 			}
 		};
 		this.source.onerror = (error) => console.log(error);
@@ -251,15 +253,15 @@ export class Game extends Component {
 			<Scores players={this.playerInfo()} showScoreDiff={serverState && (serverState.state.state === 'waitingForNextGame' || serverState.state.state === 'gameOver')} />
 
 			<div class="card bg-light my-2">
-				{this.isCurrentGame() ? (
+				{this.isCurrentGame() || this.isPastGame() ? (
 					<div class="table-container">
 						<Pile pile={serverState.currentGame.pile}
-							disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'draw'}
+							disabled={!this.isCurrentGame() || !this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'draw'}
 							drawAction={this.drawFromPile}
 						/>
 						<Deck deck={serverState.currentGame.deck}
 							cardOnDeck={cardOnDeck}
-							disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'draw'}
+							disabled={!this.isCurrentGame() ||!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'draw'}
 							drawAction={this.drawFromDeck}
 							drawThrowAction={this.drawThrow}
 						/>
