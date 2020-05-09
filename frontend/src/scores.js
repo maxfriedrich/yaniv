@@ -5,19 +5,20 @@ const cardsStrings = (cards) => {
 	if (typeof cards === 'number') {
 		return [cards];
 	}
-	return cards.map(c => c.gameString);
+	return cards.map(c => c.gameRepresentation.join('')); // TODO this is never shown
 };
 
 const renderScoreDiff = (scores) => {
-	const rendered = []
+	const rendered = [];
 	scores.map(score => {
 		if (score > 0) {
 			rendered.push(`+${score}`);
-		} else if (score < 0) {
+		}
+		else if (score < 0) {
 			rendered.push(`–${-score}`);
 		}
 	});
-	return (rendered.length > 0) ? `(${rendered.join(" ")})` : ''
+	return (rendered.length > 0) ? `(${rendered.join(' ')})` : '';
 };
 
 

@@ -3,6 +3,7 @@ import { h, Component } from 'preact';
 import { Container, Draggable } from 'react-smooth-dnd';
 import { applyDrag } from './drag';
 
+import { Card } from './card';
 import { Scores } from './scores';
 import { Pile, Deck } from './table';
 import { NextGameControls } from './next';
@@ -35,12 +36,6 @@ export class Game extends Component {
 	isCurrentPlayer = () => this.isCurrentGame() && this.state.serverState.currentGame.currentPlayer === this.state.serverState.me;
 
 	myName = () => this.state.serverState.players.find(p => p.id === this.state.serverState.me).name;
-
-	cardColor = (card) => {
-		if (card.id[0] === 'H' || card.id[0] === 'D') return 'red';
-		if (card.id[0] === 'C' || card.id[0] === 'S') return '';
-		return 'green';
-	}
 
 	playerCards = (playerId) => {
 		if (!this.isCurrentGame()) {
@@ -251,9 +246,9 @@ export class Game extends Component {
 			}).catch(err => console.log(err));
 	}
 
-	render = ({debug}, { selected, sortedCards, cardOnDeck, serverState }) => (
+	render = ({ debug }, { selected, sortedCards, cardOnDeck, serverState }) => (
 		<div class="game">
-			<Scores players={this.playerInfo()} showScoreDiff={this.state.serverState && (this.state.serverState.state.state === 'waitingForNextGame' || this.state.serverState.state.state === 'gameOver')} />
+			<Scores players={this.playerInfo()} showScoreDiff={serverState && (serverState.state.state === 'waitingForNextGame' || serverState.state.state === 'gameOver')} />
 
 			<div class="card bg-light my-2">
 				{this.isCurrentGame() ? (
@@ -261,14 +256,12 @@ export class Game extends Component {
 						<Pile pile={serverState.currentGame.pile}
 							disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'draw'}
 							drawAction={this.drawFromPile}
-							cardColor={this.cardColor}
 						/>
 						<Deck deck={serverState.currentGame.deck}
 							cardOnDeck={cardOnDeck}
 							disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'draw'}
 							drawAction={this.drawFromDeck}
 							drawThrowAction={this.drawThrow}
-							cardColor={this.cardColor}
 						/>
 					</div>
 				) : (<div class="table-container" />)}
@@ -279,10 +272,10 @@ export class Game extends Component {
 					<div class="card-header">
 						{((serverState.currentGame && serverState.currentGame.ending) || serverState.state.state === 'waitingForNextGame') ?
 							<NextGameControls
-								players={this.state.serverState.players}
+								players={serverState.players}
 								currentGame={serverState.currentGame}
 								seriesState={serverState.state}
-								alreadyAccepted={this.state.serverState.state.state === 'waitingForNextGame' && this.state.serverState.state.acceptedPlayers.includes(this.state.serverState.me)}
+								alreadyAccepted={serverState.state.state === 'waitingForNextGame' && serverState.state.acceptedPlayers.includes(serverState.me)}
 								nextGameAction={this.nextGame}
 							/> : (
 								<div>
@@ -291,39 +284,41 @@ export class Game extends Component {
 								</div>)}
 					</div>
 
-					<div id="selected-container" className={`draggable-container py-2 ${this.isCurrentPlayer() && this.state.currentGame && this.state.currentGame.nextAction === 'throw' ? 'active' : 'inactive'}`}>
-						<Container groupName="player-cards" orientation="horizontal" getChildPayload={i => selected[i]} onDrop={e => this.setState({ selected: applyDrag(selected, e) })}>
-							{
-								selected.map(c => (
-									<Draggable key={c.id}>
-										<div className={`game-card playable ${this.cardColor(c)}`} onClick={e => this.unselectCard(c)}>{c.gameString}</div>
-									</Draggable>
-								))
-								// <div class="w-100 align-self-center text-center"><p class="text-muted">Tap cards to select</p></div>
-							}
-						</Container>
+					<div id="selected-container" className={`draggable-container py-2 ${this.isCurrentPlayer() && serverState.currentGame && serverState.currentGame.nextAction === 'throw' ? 'active' : 'inactive'}`}>
+						{this.isCurrentPlayer() && serverState.currentGame && serverState.currentGame.nextAction === 'throw' ? (
+							<Container groupName="player-cards" orientation="horizontal" getChildPayload={i => selected[i]} onDrop={e => this.setState({ selected: applyDrag(selected, e) })}>
+								{
+									selected.map(c => (
+										<Draggable key={c.id}>
+											<Card
+												card={c}
+												playable={this.isCurrentPlayer() && serverState.currentGame.nextAction === 'throw'}
+												action={e => this.unselectCard(c)}
+											/>
+										</Draggable>
+									))
+								}
+							</Container>
+						) : <div />}
 					</div>
 					<div id="hand-container" class="draggable-container py-2 border-top">
 						<Container groupName="player-cards" orientation="horizontal" getChildPayload={i => sortedCards[i]} onDrop={e => this.setState({ sortedCards: applyDrag(sortedCards, e) })}>
 							{
-								sortedCards.map(c => {
-									const classNames = `game-card ${(this.isCurrentPlayer() && serverState.currentGame.nextAction === 'throw') ? 'playable' : 'inactive'} ${this.cardColor(c)}`;
-									return (<Draggable key={c.id}>
-										<div className={classNames} onClick={e => {
-											if (this.isCurrentPlayer() && serverState.currentGame.nextAction === 'throw') this.selectCard(c);
-										}
-										}
-										>{c.gameString}</div>
-									</Draggable>
-									);
-								})
+								sortedCards.map(c => (<Draggable key={c.id}>
+									<Card
+										card={c}
+										playable={this.isCurrentPlayer() && serverState.currentGame.nextAction === 'throw'}
+										action={e => this.selectCard(c)}
+									/>
+								</Draggable>
+								))
 							}
 						</Container>
 					</div>
 				</div>
 			</div>
 			{debug ? (<pre>
-				state: {JSON.stringify(this.state.serverState, undefined, 2)}
+				state: {JSON.stringify(serverState, undefined, 2)}
 			</pre>) : <div />}
 		</div>
 	)
