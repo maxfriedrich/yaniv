@@ -18,16 +18,14 @@ const renderScoreDiff = (scores) => {
 			rendered.push(`–${-score}`);
 		}
 	});
-	return (rendered.length > 0) ? `(${rendered.join(' ')})` : '';
+	return (rendered.length > 0) ? rendered.join(' ') : '';
 };
 
 
-const basicClasses = 'list-group-item d-flex justify-content-between align-items-middle';
-const meClass = 'list-group-item'; // TODO: find a better way to highlight "me"
+const basicClasses = 'list-group-item py-2 d-flex justify-content-between align-items-middle';
 const activeClass = 'active';
 
-const listGroupClasses = (me, active) =>
-	`${basicClasses} ${me ? meClass : ''} ${active ? activeClass : ''}`;
+const listGroupClasses = (active) => `${basicClasses} ${active ? activeClass : ''}`;
 
 const meBadgeClasses = (active) => `badge ${active ? 'badge-light' : 'badge-primary'}`;
 
@@ -35,16 +33,16 @@ export const Scores = ({ players, showScoreDiff }) => (
 	<div class="card my-2">
 		<ul class="list-group">
 			{players.map(player => (
-				<li className={listGroupClasses(player.isMe, player.isCurrentPlayer)}>
-					<span>{player.name}&nbsp;{player.isMe ? <span><span className={meBadgeClasses(player.isCurrentPlayer)}>ME</span>&nbsp;</span> : <span />}
+				<li className={listGroupClasses(player.isCurrentPlayer)}>
+					<div class="d-flex flex-column justify-content-center"><div>{player.name}&nbsp;{player.isMe ? <span><span className={meBadgeClasses(player.isCurrentPlayer)}>ME</span>&nbsp;</span> : <span />}
 						{cardsStrings(player.cards).map(card =>
 							<span><span class="badge badge-secondary">{card}</span> </span>
 						)}
-					</span>
-					<span>
-						<span class="player-score">{player.score}</span>
-						{(showScoreDiff && (player.scoreDiff || player.scoreDiff === 0)) ? <span class="player-score-diff small">{renderScoreDiff(player.scoreDiff)}</span> : <span />}
-					</span>
+					</div></div>
+					<div class="player-score d-flex flex-column justify-content-center">
+						<div>{player.score}</div>
+						{(showScoreDiff && (player.scoreDiff || player.scoreDiff === 0)) ? <div class="player-score-diff small text-muted">{renderScoreDiff(player.scoreDiff)}</div> : <div />}
+					</div>
 				</li>
 			)
 			)}
