@@ -10,6 +10,15 @@ object GameSeriesLogic {
       _ <- Either.cond(gss.state == WaitingForSeriesStart, (), "Game series was already started")
     } yield gss.copy(players = gss.players :+ playerInfo, scores = gss.scores ++ Map(playerInfo.id -> 0))
 
+  def removePlayer(gss: GameSeriesState, playerId: PlayerId): Either[String, GameSeriesState] =
+    for {
+      _ <- Either.cond(gss.state == WaitingForSeriesStart, (), "Game series was already started")
+    } yield {
+      val newPlayers = gss.players.filter(_.id != playerId)
+      val newScores  = gss.scores.filter(_._1 != playerId)
+      gss.copy(players = newPlayers, scores = newScores)
+    }
+
   def startSeries(gss: GameSeriesState): Either[String, GameSeriesState] =
     for {
       _ <- Either.cond(gss.state == WaitingForSeriesStart, (), "Game series was already started")

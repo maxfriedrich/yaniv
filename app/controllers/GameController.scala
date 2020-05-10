@@ -50,6 +50,15 @@ class GameController @Inject() (implicit as: ActorSystem, val controllerComponen
     resultOrError(result)
   }
 
+  def remove(gameSeriesId: String, playerId: String) = Action { request =>
+    val result = for {
+      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
+      newSeriesState  <- GameSeriesLogic.removePlayer(gameSeriesState, playerId)
+      _               <- gamesService.update(gameSeriesId, newSeriesState)
+    } yield Ok(Json.toJson(Map("ok" -> "ok")))
+    resultOrError(result)
+  }
+
   def preStartInfo(gameSeriesId: String) = Action { request =>
     val result = for {
       stateView <- gamesService.getGameSeriesPreStartInfo(gameSeriesId)
