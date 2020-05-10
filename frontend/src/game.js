@@ -91,7 +91,6 @@ export class Game extends Component {
 		this.source = new EventSource(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/state/stream`);
 		this.source.onmessage = (event) => {
 			console.log(event);
-			// debugger;
 			const newServerState = JSON.parse(event.data.substring(5));
 			console.log('Got new server state from stream:', newServerState);
 			if (newServerState.version <= this.state.serverState.version) {
@@ -99,15 +98,14 @@ export class Game extends Component {
 				return;
 			}
 			if (newServerState.state.state === 'gameIsRunning') {
-				const isNewGame = this.state.serverState.state === 'waitingForNextGame';
+				const isNewGame = this.state.serverState.state.state === 'waitingForNextGame';
 				const newSortedCards = isNewGame ?
-					currentGame.me.cards.sort((a, b) => a.endValue - b.endValue)
+					newServerState.currentGame.me.cards.sort((a, b) => a.endValue - b.endValue)
 					: this.updateSortedCards(newServerState.currentGame.me.cards, newServerState.currentGame.me.drawThrowable);
 				this.setState({ serverState: newServerState, sortedCards: newSortedCards, cardOnDeck: null });
 			}
 			else {
-				const newSortedCards = this.updateSortedCards(newServerState.currentGame.me.cards, []);
-				this.setState({ serverState: newServerState, sortedCards: newSortedCards, cardOnDeck: null });
+				this.setState({ serverState: newServerState, cardOnDeck: null });
 			}
 		};
 		this.source.onerror = (error) => console.log(error);
