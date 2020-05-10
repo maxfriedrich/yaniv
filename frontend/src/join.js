@@ -157,6 +157,21 @@ export class Join extends Component {
 
 	updateName = (e) => this.setState({ name: e.target.value })
 
+	removePlayer = (playerId) => () => {
+		console.log('remove player', playerId);
+		fetch(`/rest/game/${this.props.gameId}/remove/${playerId}`, {
+			method: 'POST'
+		})
+			.then(response => response.json())
+			.then((data) => {
+				if ('error' in data) {
+					alert(JSON.stringify(data.error));
+				}
+				console.log('got ok response:', data);
+			})
+			.catch(err => console.log(err));
+	}
+
 	render = ({ gameId, playerId, debug }, { players, name }) => (
 		<div>
 			{gameId ? (
@@ -166,10 +181,14 @@ export class Join extends Component {
 						<div class="card-header">Waiting for players…</div>
 						<div class="card-body">
 							<p>Share this link: <a href={this.joinLink()}>{this.joinLink()}</a></p>
-							<ul>
-								{players.map(player => <li>{player.name}</li>)}
+							<ul class="list-group">
+								{players.map(player => (
+									<li class="list-group-item py-2 d-flex justify-content-between align-items-middle">
+										<span>{player.name}&nbsp;{player.id === playerId ? <span class="badge badge-primary">ME</span>: <span />}</span>
+										{player.id === playerId ? <span /> : <button class="btn py-0 close" onClick={this.removePlayer(player.id)}>&times;</button>}
+									</li>))}
 							</ul>
-							<button class="btn btn-primary" disabled={players.length < 2}
+							<button class="btn btn-primary my-2" disabled={players.length < 2}
 								onClick={this.startGame}
 							>Start Game</button>
 						</div>
