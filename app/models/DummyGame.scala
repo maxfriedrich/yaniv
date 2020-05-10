@@ -147,7 +147,7 @@ object DummyGame {
   }
 
   val gameOver = "g5" -> {
-    val config = GameSeriesConfig.Default
+    val config   = GameSeriesConfig.Default
     val shuffled = Shuffle.shuffle(2, config.gameConfig.playerNumCards, config.gameConfig.deck)
 
     mutable.Buffer(
@@ -169,7 +169,8 @@ object DummyGame {
             pile = shuffled.pile,
             deck = shuffled.deck,
             ending = Some(GameResult(Yaniv("p1", 2), Map("p1" -> 2, "p2" -> 4)))
-          )),
+          )
+        ),
         lastWinner = Some("p1"),
         scores = Map("p1"     -> 99, "p2"     -> 101),
         scoresDiff = Map("p1" -> Seq(1), "p2" -> Seq(2))
