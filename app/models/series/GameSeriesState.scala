@@ -7,10 +7,14 @@ import models.{GameSeriesId, GameState, PlayerId}
 case class PlayerInfo(id: PlayerId, name: String)
 
 sealed trait HighLevelState
-case object GameIsRunning                                     extends HighLevelState
-case object WaitingForSeriesStart                             extends HighLevelState
-case class WaitingForNextGame(acceptedPlayers: Set[PlayerId]) extends HighLevelState
-case class GameOver(winner: PlayerId)                         extends HighLevelState
+sealed trait WaitingForNext {
+  val acceptedPlayers: Set[PlayerId]
+}
+
+case object GameIsRunning                                             extends HighLevelState
+case object WaitingForSeriesStart                                     extends HighLevelState
+case class WaitingForNextGame(acceptedPlayers: Set[PlayerId])         extends HighLevelState with WaitingForNext
+case class GameOver(winner: PlayerId, acceptedPlayers: Set[PlayerId]) extends HighLevelState with WaitingForNext
 
 case class GameSeriesState(
     config: GameSeriesConfig,

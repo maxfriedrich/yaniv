@@ -32,22 +32,43 @@ object GameSeriesLogic {
 
   def acceptGameEnding(gss: GameSeriesState, player: PlayerId): Either[String, GameSeriesState] =
     for {
-      newAccepted <- gss.state match {
-        case WaitingForNextGame(accepted) if accepted.contains(player) =>
-          Left("Player has already accepted next game")
-        case WaitingForNextGame(accepted) => Right(accepted ++ Set(player))
-        case _                            => Left("There is no next game to accept")
+      newSeriesState <- gss.state match {
+        case w: WaitingForNext if w.acceptedPlayers.contains(player) => Left("Player has already accepted next game")
+        case g: WaitingForNextGame                                   => Right(acceptGameEndingInSeries(gss, player, g))
+        case g: GameOver                                             => Right(acceptNewSeries(gss, player, g))
+        case _                                                       => Left("There is no next game to accept")
       }
-      allAccepted = newAccepted.size == gss.players.size
-    } yield {
-      val (newState, newGame) =
-        if (allAccepted) {
-          (GameIsRunning, Some(GameState.newGame(gss.config.gameConfig, gss.players, startingPlayer = gss.lastWinner)))
-        } else {
-          (WaitingForNextGame(newAccepted), gss.currentGame)
-        }
-      gss.copy(state = newState, currentGame = newGame)
+    } yield newSeriesState
+
+  private def acceptGameEndingInSeries(
+      gss: GameSeriesState,
+      player: PlayerId,
+      waiting: WaitingForNextGame
+  ): GameSeriesState = {
+    val newAccepted = waiting.acceptedPlayers ++ Set(player)
+    val allAccepted = newAccepted.size == gss.players.size
+    val (newState, newGame) =
+      if (allAccepted) {
+        (GameIsRunning, Some(GameState.newGame(gss.config.gameConfig, gss.players, startingPlayer = gss.lastWinner)))
+      } else {
+        (WaitingForNextGame(newAccepted), gss.currentGame)
+      }
+    gss.copy(state = newState, currentGame = newGame)
+  }
+
+  private def acceptNewSeries(gss: GameSeriesState, player: PlayerId, waiting: GameOver): GameSeriesState = {
+    val newAccepted = waiting.acceptedPlayers ++ Set(player)
+    val allAccepted = newAccepted.size == gss.players.size
+    if (allAccepted) {
+      val lastLoser     = gss.scores.minBy(_._2)._1
+      val newGame       = GameState.newGame(gss.config.gameConfig, gss.players, startingPlayer = Some(lastLoser))
+      val newScores     = gss.scores.keys.map(playerId => playerId -> 0).toMap
+      val newScoresDiff = newScores.keys.map(playerId => playerId -> Seq.empty).toMap
+      gss.copy(state = GameIsRunning, currentGame = Some(newGame), scores = newScores, scoresDiff = newScoresDiff)
+    } else {
+      gss.copy(state = waiting.copy(acceptedPlayers = newAccepted), currentGame = gss.currentGame)
     }
+  }
 
   def updateGameState(gss: GameSeriesState, gs: GameState): GameSeriesState = gs.ending match {
     case Some(result) =>
@@ -107,7 +128,7 @@ object GameSeriesLogic {
 
   private[series] def checkSeriesEnding(scores: Map[PlayerId, Int], losingScore: Int): Option[GameOver] = {
     if (scores.values.exists(_ > losingScore))
-      Some(GameOver(scores.minBy(_._2)._1)) // currently only one winner
+      Some(GameOver(scores.minBy(_._2)._1, Set.empty)) // currently only one winner
     else
       None
   }
