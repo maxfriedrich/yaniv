@@ -282,12 +282,12 @@ export class Game extends Component {
 			<div class="card my=2">
 				<div class="hand-container">
 					<div class="card-header">
-						{((serverState.currentGame && serverState.currentGame.ending) || serverState.state.state === 'waitingForNextGame') ?
+						{(serverState.currentGame && serverState.currentGame.ending) ?
 							<NextGameControls
 								players={serverState.players}
 								currentGame={serverState.currentGame}
 								seriesState={serverState.state}
-								alreadyAccepted={serverState.state.state === 'waitingForNextGame' && serverState.state.acceptedPlayers.includes(serverState.me)}
+								alreadyAccepted={serverState.state.acceptedPlayers && serverState.state.acceptedPlayers.includes(serverState.me)}
 								nextGameAction={this.nextGame}
 							/> : (
 								<div>
