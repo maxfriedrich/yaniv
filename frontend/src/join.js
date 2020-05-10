@@ -11,7 +11,7 @@ export class Join extends Component {
 		};
 	}
 
-	getGameInfo() {
+	getGameInfo = () => {
 		console.log('trying to get game state...');
 		if (!this.props.gameId) return;
 		console.log('getting game state...');
@@ -24,7 +24,7 @@ export class Join extends Component {
 			.catch(err => console.log(err));
 	}
 
-	setupPreStartStream() {
+	setupPreStartStream = () => {
 		console.log('trying to get pre-game stream...');
 		if (!this.props.gameId) return false;
 		console.log('getting pre-game stream...');
@@ -39,7 +39,7 @@ export class Join extends Component {
 	}
 
 
-	setupStream() {
+	setupStream = () => {
 		console.log('trying to get in-game stream...');
 		if (!this.props.gameId || !this.props.playerId) return false;
 		console.log('getting in-game stream...');
@@ -57,18 +57,19 @@ export class Join extends Component {
 		return true;
 	}
 
-	componentDidMount() {
+	componentDidMount = () => {
 		console.log('component did mount');
 		this.getGameInfo();
 		if (!this.setupStream()) this.setupPreStartStream();
 	}
 
-	componentWillUnmount() {
+	componentWillUnmount = () => {
 		console.log('component will unmount');
 		this.source = null;
 	}
 
-	createGame() {
+	createGame = (e) => {
+		e.preventDefault();
 		console.log('Creating game...');
 		fetch('/rest/game/new', {
 			method: 'POST'
@@ -109,7 +110,8 @@ export class Join extends Component {
 			.catch((err) => console.log(err));
 	}
 
-	joinGame() {
+	joinGame = (e) => {
+		e.preventDefault();
 		console.log('Joining game...');
 		fetch(`/rest/game/${this.props.gameId}/join`, {
 			method: 'POST',
@@ -134,7 +136,8 @@ export class Join extends Component {
 			.catch(err => console.log(err));
 	}
 
-	startGame() {
+	startGame = (e) => {
+		e.preventDefault();
 		console.log('Starting game...');
 		fetch(`/rest/game/${this.props.gameId}/start`, {
 			method: 'POST'
@@ -152,56 +155,56 @@ export class Join extends Component {
 
 	joinLink = () =>  `${window.location.origin}/join/${this.props.gameId}`
 
-	render({ gameId, playerId, debug }, { players, name }) {
-		return (
-			<div>
-				{gameId ? (
-					playerId ? (
-						// Joined, waiting for players
-						<div class="card my-2">
-							<div class="card-header">Waiting for players…</div>
-							<div class="card-body">
-								<p>Share this link: <a href={this.joinLink()}>{this.joinLink()}</a></p>
-								<ul>
-									{players.map(player => <li>{player.name}</li>)}
-								</ul>
-								<button class="btn btn-primary" disabled={players.length < 2}
-									onClick={e => { this.startGame(); e.preventDefault(); }}
-								>Start Game</button>
-							</div>
+	updateName = (e) => this.setState({ name: e.target.value })
+
+	render = ({ gameId, playerId, debug }, { players, name }) => (
+		<div>
+			{gameId ? (
+				playerId ? (
+				// Joined, waiting for players
+					<div class="card my-2">
+						<div class="card-header">Waiting for players…</div>
+						<div class="card-body">
+							<p>Share this link: <a href={this.joinLink()}>{this.joinLink()}</a></p>
+							<ul>
+								{players.map(player => <li>{player.name}</li>)}
+							</ul>
+							<button class="btn btn-primary" disabled={players.length < 2}
+								onClick={this.startGame}
+							>Start Game</button>
 						</div>
-					) : (
-						// Join Game
-						<div class="card my-2">
-							<div class="card-body">
-								<form>
-									<div class="form-group">
-										<input id="name" type="text" class="form-control" placeholder="Enter name" value={this.state.name}
-											onChange={e => this.setState({ name: e.target.value })}
-										/>
-									</div>
-									<button class="btn btn-primary" disabled={!this.state.name || this.state.name.trim().length === 0} onClick={e => { this.joinGame(); e.preventDefault(); }}>Join {players.length} Player{players.length !== 1 ? 's' : ''}</button>
-								</form>
-							</div>
-						</div>
-					)
+					</div>
 				) : (
-					// New Game
+				// Join Game
 					<div class="card my-2">
 						<div class="card-body">
 							<form>
 								<div class="form-group">
-									<input type="text" class="form-control" id="name" placeholder="Enter name" value={this.state.name}
-										onChange={e => this.setState({ name: e.target.value })}
+									<input id="name" type="text" class="form-control" placeholder="Enter name" value={this.state.name}
+										onChange={this.updateName}
 									/>
 								</div>
-								<button class="btn btn-primary" disabled={!this.state.name || this.state.name.trim().length === 0} onClick={e => { this.createGame(); e.preventDefault(); }}>New Game</button>
+								<button class="btn btn-primary" disabled={!this.state.name || this.state.name.trim().length === 0} onClick={this.joinGame}>Join {players.length} Player{players.length !== 1 ? 's' : ''}</button>
 							</form>
 						</div>
 					</div>
-				)}
-				{debug ? (<pre>{JSON.stringify(this.state)} {JSON.stringify(this.props)}</pre>) : <div />}
-			</div>
-		);
-	}
+				)
+			) : (
+			// New Game
+				<div class="card my-2">
+					<div class="card-body">
+						<form>
+							<div class="form-group">
+								<input type="text" class="form-control" id="name" placeholder="Enter name" value={this.state.name}
+									onChange={this.updateName}
+								/>
+							</div>
+							<button class="btn btn-primary" disabled={!this.state.name || this.state.name.trim().length === 0} onClick={this.createGame}>New Game</button>
+						</form>
+					</div>
+				</div>
+			)}
+			{debug ? (<pre>{JSON.stringify(this.state)} {JSON.stringify(this.props)}</pre>) : <div />}
+		</div>
+	)
 }

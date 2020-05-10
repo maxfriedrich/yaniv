@@ -117,19 +117,25 @@ export class Game extends Component {
 		this.source = null;
 	}
 
-	selectCard = (card) => {
+	selectCard = (card) => () => {
 		const newSelection = this.state.selected.concat([card]);
 		const newSortedCards = this.state.sortedCards.filter(c => c.id !== card.id);
 		this.setState({ selected: newSelection, sortedCards: newSortedCards });
 		console.log('Selecting card: ' + card.id);
 	}
 
-	unselectCard = (card) => {
+	unselectCard = (card) => () => {
 		const newSelection = this.state.selected.filter(c => c.id !== card.id);
 		const newSortedCards = this.state.sortedCards.concat([card]);
 		this.setState({ selected: newSelection, sortedCards: newSortedCards });
 		console.log('Unselecting card: ' + card.id);
 	}
+
+	getSelected = (i) => this.state.selected[i]
+	getSortedCards = (i) => this.state.sortedCards[i]
+
+	updateSelectedAfterDraw = (e) => this.setState({ selected: applyDrag(this.state.selected, e) })
+	updateSortedCardsAfterDraw = (e) => this.setState({ sortedCards: applyDrag(this.state.sortedCards, e) })
 
 	drawFromPile = (card) => {
 		console.log('Drawing from pile: ', card.id);
@@ -293,14 +299,14 @@ export class Game extends Component {
 
 					<div id="selected-container" className={`draggable-container py-2 ${this.isCurrentPlayer() && serverState.currentGame && serverState.currentGame.nextAction === 'throw' ? 'active' : 'inactive'}`}>
 						{this.isCurrentPlayer() && serverState.currentGame && serverState.currentGame.nextAction === 'throw' ? (
-							<Container groupName="player-cards" orientation="horizontal" getChildPayload={i => selected[i]} onDrop={e => this.setState({ selected: applyDrag(selected, e) })}>
+							<Container groupName="player-cards" orientation="horizontal" getChildPayload={this.getSelected} onDrop={this.updateSelectedAfterDraw}>
 								{
 									selected.map(c => (
 										<Draggable key={c.id}>
 											<Card
 												card={c}
 												playable={this.isCurrentPlayer() && serverState.currentGame.nextAction === 'throw'}
-												action={e => this.unselectCard(c)}
+												action={this.unselectCard(c)}
 											/>
 										</Draggable>
 									))
@@ -309,13 +315,13 @@ export class Game extends Component {
 						) : <div />}
 					</div>
 					<div id="hand-container" class="draggable-container py-2 border-top">
-						<Container groupName="player-cards" orientation="horizontal" getChildPayload={i => sortedCards[i]} onDrop={e => this.setState({ sortedCards: applyDrag(sortedCards, e) })}>
+						<Container groupName="player-cards" orientation="horizontal" getChildPayload={this.getSortedCards} onDrop={this.updateSortedCardsAfterDraw}>
 							{
 								sortedCards.map(c => (<Draggable key={c.id}>
 									<Card
 										card={c}
 										playable={this.isCurrentPlayer() && serverState.currentGame.nextAction === 'throw'}
-										action={e => this.selectCard(c)}
+										action={this.selectCard(c)}
 									/>
 								</Draggable>
 								))
