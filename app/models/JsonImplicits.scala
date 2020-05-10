@@ -103,7 +103,7 @@ object JsonImplicits {
   case class JsonGameIsRunning(state: String)
   case class JsonWaitingForSeriesStart(state: String)
   case class JsonWaitingForNextGame(state: String, acceptedPlayers: Set[String])
-  case class JsonGameOver(state: String, winner: PlayerId)
+  case class JsonGameOver(state: String, winner: PlayerId, acceptedPlayers: Set[String])
 
   implicit val highLevelStateWrites: Writes[HighLevelState] = Writes {
     case GameIsRunning =>
@@ -112,7 +112,8 @@ object JsonImplicits {
       Json.writes[JsonWaitingForSeriesStart].writes(JsonWaitingForSeriesStart(Strings.WaitingForSeriesStart))
     case WaitingForNextGame(accepted) =>
       Json.writes[JsonWaitingForNextGame].writes(JsonWaitingForNextGame(Strings.WaitingForNextGame, accepted))
-    case GameOver(winner) => Json.writes[JsonGameOver].writes(JsonGameOver(Strings.GameOver, winner))
+    case GameOver(winner, accepted) =>
+      Json.writes[JsonGameOver].writes(JsonGameOver(Strings.GameOver, winner, accepted))
   }
 
   implicit val highLevelStateReads: Reads[HighLevelState] = Reads { json =>
@@ -121,8 +122,9 @@ object JsonImplicits {
       case JsDefined(JsString(Strings.WaitingForSeriesStart)) => JsSuccess(WaitingForSeriesStart)
       case JsDefined(JsString(Strings.WaitingForNextGame)) =>
         Json.reads[JsonWaitingForNextGame].reads(json).map(w => WaitingForNextGame(w.acceptedPlayers))
-      case JsDefined(JsString(Strings.GameOver)) => Json.reads[JsonGameOver].reads(json).map(w => GameOver(w.winner))
-      case _                                     => JsError("not a valid no current game")
+      case JsDefined(JsString(Strings.GameOver)) =>
+        Json.reads[JsonGameOver].reads(json).map(w => GameOver(w.winner, w.acceptedPlayers))
+      case _ => JsError("not a valid no current game")
     }
   }
 
