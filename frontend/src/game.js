@@ -66,15 +66,19 @@ export class Game extends Component {
 		));
 	}
 
-	updateSortedCards = (serverCards, exclude) => {
-		// debugger;
-		const isExcluded = (id) => (exclude && exclude.id === id);
+	// `excluded` can be null, a card, or an array of cards
+	updateSortedCards = (serverCards, excluded) => {
+		const isExcluded = (id) => {
+			if (!excluded) return false;
+			if (excluded.id) return excluded.id === id;
+			return excluded.some(e => e.id === id);
+		};
+		
 		const serverCardIds = serverCards.map(c => c.id);
 		const handCards = this.state.sortedCards.filter(c => serverCardIds.includes(c.id));
 		const handCardIds = handCards.map(c => c.id);
 		const newCards = serverCards.filter(c => !(handCardIds.includes(c.id))).filter(c => !isExcluded(c.id));
 		const result = handCards.concat(newCards.sort((a, b) => a.endValue - b.endValue));
-		console.log('New sorted cards:', result);
 		return result;
 	}
 
@@ -100,9 +104,10 @@ export class Game extends Component {
 			}
 			if (newServerState.state.state === 'gameIsRunning') {
 				const isNewGame = this.state.serverState.state.state === 'waitingForNextGame';
+				console.log('is new game?', isNewGame);
 				const newSortedCards = isNewGame ?
 					newServerState.currentGame.me.cards.sort((a, b) => a.endValue - b.endValue)
-					: this.updateSortedCards(newServerState.currentGame.me.cards, newServerState.currentGame.me.drawThrowable);
+					: this.updateSortedCards(newServerState.currentGame.me.cards, this.state.selected.concat(newServerState.currentGame.me.drawThrowable || []));
 				this.setState({ serverState: newServerState, sortedCards: newSortedCards, cardOnDeck: null });
 			}
 			else {
