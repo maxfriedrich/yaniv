@@ -177,4 +177,21 @@ object DummyGame {
       )
     )
   }
+
+  val singleCards = "g6" -> {
+    val deck = GameSeriesConfig.Default.gameConfig.deck.filter(_.endValue <= 5)
+    val config =
+      GameSeriesConfig.Default.copy(GameSeriesConfig.Default.gameConfig.copy(playerNumCards = 1, deck = deck))
+
+    val empty = GameSeriesState.empty(config, "g6")
+    val state = (for {
+      withPlayer1 <- GameSeriesLogic.addPlayer(empty, PlayerInfo("p1", "Max"))
+      withPlayer2 <- GameSeriesLogic.addPlayer(withPlayer1, PlayerInfo("p2", "Pauli"))
+      started     <- GameSeriesLogic.startSeries(withPlayer2)
+    } yield started).toSeq
+
+    mutable.Buffer(
+      state: _*
+    )
+  }
 }
