@@ -3,9 +3,9 @@ import { h, Component } from 'preact';
 import { Container, Draggable } from 'react-smooth-dnd';
 import { applyDrag } from './drag';
 
-import { Card } from './components/card';
+import { Card } from './card';
 import { Scores } from './scores';
-import { Pile, Deck } from './components/table';
+import { Pile, Deck } from './table';
 import { NextGameControls } from './next';
 import './style';
 

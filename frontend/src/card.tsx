@@ -1,5 +1,7 @@
 import { h } from 'preact';
 
+import { CardType } from '.'
+
 const color = (card: CardType) => {
 	if (card.id[0] === 'H' || card.id[0] === 'D') return 'red';
 	if (card.id[0] === 'C' || card.id[0] === 'S') return '';

@@ -1,15 +1,19 @@
-const cardsStrings = (cards) => {
+import { h } from 'preact';
+
+import { CardType, PlayerInfoType } from '.'
+
+const cardsStrings = (cards?: Array<CardType> | number): Array<string> => {
 	if (!cards) {
 		return [];
 	}
 	if (typeof cards === 'number') {
-		return [cards];
+		return [cards.toString()];
 	}
 	return cards.sort((a, b) => a.endValue - b.endValue).map(c => c.gameRepresentation.join(''));
 };
 
-const renderScoreDiff = (scores) => {
-	const rendered = [];
+const renderScoreDiff = (scores: Array<number>) => {
+	const rendered: Array<string> = [];
 	scores.map(score => {
 		if (score > 0) {
 			rendered.push(`+${score}`);
@@ -25,11 +29,13 @@ const renderScoreDiff = (scores) => {
 const basicClasses = 'list-group-item py-2 d-flex justify-content-between align-items-middle';
 const activeClass = 'active';
 
-const listGroupClasses = (active) => `${basicClasses} ${active ? activeClass : ''}`;
+const listGroupClasses = (active: boolean) => `${basicClasses} ${active ? activeClass : ''}`;
 
-const meBadgeClasses = (active) => `badge ${active ? 'badge-light' : 'badge-primary'}`;
+const meBadgeClasses = (active: boolean) => `badge ${active ? 'badge-light' : 'badge-primary'}`;
 
-export const Scores = ({ players, showScoreDiff }) => (
+export interface ScoresProps { players: Array<PlayerInfoType>, showScoreDiff: boolean}
+
+export const Scores = ({ players, showScoreDiff }: ScoresProps) => (
 	<div class="card my-2">
 		<ul class="list-group">
 			{players.map(player => (
@@ -41,7 +47,7 @@ export const Scores = ({ players, showScoreDiff }) => (
 					</div></div>
 					<div class="player-score d-flex flex-column justify-content-center">
 						<div>{player.score}</div>
-						{(showScoreDiff && (player.scoreDiff || player.scoreDiff === 0)) ? <div class="player-score-diff small text-muted">{renderScoreDiff(player.scoreDiff)}</div> : <div />}
+						{(showScoreDiff && (player.scoreDiff || player.scoreDiff.includes(0))) ? <div class="player-score-diff small text-muted">{renderScoreDiff(player.scoreDiff)}</div> : <div />}
 					</div>
 				</li>
 			)

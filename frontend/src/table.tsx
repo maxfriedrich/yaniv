@@ -1,7 +1,7 @@
-import { h } from 'preact';
+import { h } from 'preact'
 
-import { CardType, PileType } from '../../index'
-import { Card } from '../card';
+import { CardType, PileType } from '.'
+import { Card } from './card'
 
 const drawCard = (drawAction: (arg0: CardType) => void, card: CardType) => () => drawAction(card);
 
