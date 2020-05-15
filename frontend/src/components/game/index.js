@@ -7,7 +7,6 @@ import { Card } from './card';
 import { Scores } from './scores';
 import { Pile, Deck } from './table';
 import { NextGameControls } from './next';
-import './style';
 
 export class Game extends Component {
 	constructor() {

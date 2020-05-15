@@ -7,6 +7,8 @@ import { Join } from './components/join';
 import { Game } from './components/game';
 import { EventSourceTest } from './es';
 
+import './style';
+
 render(
 	<div class="container">
 		<nav class="navbar navbar-light bg-light">
