@@ -7,8 +7,8 @@
     "build": "preact build --no-prerender --no-inline-css --dest ../public/frontend",
     "serve": "sirv start ../public/frontend --cors --single",
     "dev": "preact watch",
-    "lint": "eslint src",
-    "fix": "eslint src --fix"
+    "lint": "eslint src/**/*.{js,ts,tsx}",
+    "fix": "eslint src/**/*.{js,ts,tsx} --fix"
   },
   "eslintConfig": {
     "extends": "eslint-config-synacor"
