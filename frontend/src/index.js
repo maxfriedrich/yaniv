@@ -3,8 +3,8 @@ import Router from 'preact-router';
 
 import 'bootstrap/scss/bootstrap';
 
-import { Join } from './join';
-import { Game } from './game';
+import { Join } from './components/join';
+import { Game } from './components/game';
 import { EventSourceTest } from './es';
 
 render(
