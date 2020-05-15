@@ -1,8 +1,13 @@
-import { Card } from './card';
+import { h } from 'preact';
 
-const drawCard = (drawAction, card) => () => drawAction(card);
+import { CardType, PileType } from '../../index'
+import { Card } from '../card';
 
-export const Pile = ({ pile, disabled, drawAction }) => (
+const drawCard = (drawAction: (arg0: CardType) => void, card: CardType) => () => drawAction(card);
+
+export interface PileProps { pile: PileType, disabled: boolean, drawAction: any}
+
+export const Pile = ({ pile, disabled, drawAction }: PileProps) => (
 	<div class="pile-container">
 		<div class="top-container">
 			{pile.top.map(card => <Card card={card} playable={false} classes="pile-card" />)}
@@ -15,7 +20,9 @@ export const Pile = ({ pile, disabled, drawAction }) => (
 	</div>
 );
 
-export const Deck = ({ deck, cardOnDeck, disabled, drawAction, drawThrowAction }) => (
+export interface DeckProps { deck?: number, disabled: boolean, cardOnDeck?: CardType, drawAction: () => void, drawThrowAction: () => void }
+
+export const Deck = ({ deck, cardOnDeck, disabled, drawAction, drawThrowAction }: DeckProps) => (
 	<div class="deck-container">
 		{cardOnDeck ? <Card classes={'deck-card'} card={cardOnDeck} playable action={drawThrowAction} /> :
 			<Card classes={'deck-card'} backside playable={!disabled} action={drawAction} />}

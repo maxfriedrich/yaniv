@@ -1,0 +1,52 @@
+.game-card {
+  display         : flex;
+  flex-direction  : column;
+  justify-content : center;
+  align-items     : center;
+  font-size       : 120%;
+  line-height     : 120%;
+  text-align      : center;
+  background-color: white;
+  height          : 10vh;
+  min-width       : 4vw;
+  width           : calc(100% - 1vw);
+  vertical-align  : middle;
+  margin          : 0 0.5vw;
+  border          : 1px solid #ccc;
+  border-radius   : 10px;
+}
+
+.game-card.inactive {
+  background-color: #eee;
+  color           : #666;
+}
+
+.game-card.red {
+  color: #dc3545;
+}
+
+.game-card.inactive.red {
+  color: darken(#dc3545, 10%);
+}
+
+.game-card.green {
+  color: green;
+}
+
+.game-card.inactive.green {
+  color: darken(green, 10%);
+}
+
+.game-card.playable {
+  border-width: 0.5vh;
+  border-color: darkblue;
+}
+
+.backside {
+  background: green;
+  color     : white;
+}
+
+.backside.inactive {
+  background: lightgreen;
+}
