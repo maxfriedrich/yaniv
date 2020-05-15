@@ -33,7 +33,7 @@ const listGroupClasses = (active: boolean) => `${basicClasses} ${active ? active
 
 const meBadgeClasses = (active: boolean) => `badge ${active ? 'badge-light' : 'badge-primary'}`;
 
-export interface ScoresProps { players: Array<PlayerInfoType>, showScoreDiff: boolean}
+export interface ScoresProps { players: Array<PlayerInfoType>; showScoreDiff: boolean}
 
 export const Scores = ({ players, showScoreDiff }: ScoresProps) => (
 	<div class="card my-2">

@@ -3,9 +3,9 @@ import { h } from 'preact'
 import { CardType, PileType } from '.'
 import { Card } from './card'
 
-const drawCard = (drawAction: (arg0: CardType) => void, card: CardType) => () => drawAction(card);
+const drawCard = (drawAction: (card: CardType) => void, card: CardType) => () => drawAction(card);
 
-export interface PileProps { pile: PileType, disabled: boolean, drawAction: any}
+export interface PileProps { pile: PileType; disabled: boolean; drawAction: () => void}
 
 export const Pile = ({ pile, disabled, drawAction }: PileProps) => (
 	<div class="pile-container">
@@ -20,7 +20,7 @@ export const Pile = ({ pile, disabled, drawAction }: PileProps) => (
 	</div>
 );
 
-export interface DeckProps { deck?: number, disabled: boolean, cardOnDeck?: CardType, drawAction: () => void, drawThrowAction: () => void }
+export interface DeckProps { deck?: number; disabled: boolean; cardOnDeck?: CardType; drawAction: () => void; drawThrowAction: () => void }
 
 export const Deck = ({ deck, cardOnDeck, disabled, drawAction, drawThrowAction }: DeckProps) => (
 	<div class="deck-container">

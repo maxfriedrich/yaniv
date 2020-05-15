@@ -3,8 +3,8 @@ import { h } from 'preact';
 import { CardType } from '.'
 
 const color = (card: CardType) => {
-	if (card.id[0] === 'H' || card.id[0] === 'D') return 'red';
-	if (card.id[0] === 'C' || card.id[0] === 'S') return '';
+	if (card.id.startsWith('H') || card.id.startsWith('D')) return 'red';
+	if (card.id.startsWith('C') || card.id.startsWith('S')) return '';
 	return 'green';
 };
 
@@ -13,11 +13,11 @@ const renderString = (card: CardType) => <span>{card.gameRepresentation[0]}<wbr 
 const wrappedAction = (playable: boolean, action: () => void) => playable ? action : null;
 
 export interface CardProps { 
-	card?: CardType,
-	classes?: string,
-	playable: boolean,
-	backside?: boolean, 
-	action?: () => void
+	card?: CardType;
+	classes?: string;
+	playable: boolean;
+	backside?: boolean; 
+	action?: () => void;
 }
 
 export const Card = ({ card, classes, playable, backside, action }: CardProps) => {
