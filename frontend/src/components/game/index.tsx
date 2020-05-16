@@ -322,8 +322,8 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 								nextGameAction={this.nextGame}
 							/> : (
 								<div>
-									<button class="btn btn-primary mr-2" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending !== null || selected.length === 0} onClick={this.throw}>Throw</button>
-									<button class="btn btn-primary" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending !== null || selected.length > 0} onClick={this.yaniv}>Yaniv</button>
+									<button class="btn btn-primary mr-2" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending != null || selected.length === 0} onClick={this.throw}>Throw</button>
+									<button class="btn btn-primary" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending != null || selected.length > 0} onClick={this.yaniv}>Yaniv</button>
 								</div>)}
 					</div>
 
