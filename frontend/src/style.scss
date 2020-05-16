@@ -1,33 +1,33 @@
 /* SCORES */
 
 .player-score {
-	width: 60px;
+	width     : 60px;
 	text-align: right;
 }
 
 /* CARDS */
 
 .game-card {
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	font-size: 120%;
-	line-height: 120%;
-	text-align: center;
+	display         : flex;
+	flex-direction  : column;
+	justify-content : center;
+	align-items     : center;
+	font-size       : 120%;
+	line-height     : 120%;
+	text-align      : center;
 	background-color: white;
-	height: 10vh;
-	min-width: 4vw;
-	width: calc(100% - 1vw);
-	vertical-align: middle;
-	margin: 0 0.5vw;
-	border: 1px solid #ccc;
-	border-radius: 10px;
+	height          : 10vh;
+	min-width       : 4vw;
+	width           : calc(100% - 1vw);
+	vertical-align  : middle;
+	margin          : 0 0.5vw;
+	border          : 1px solid #ccc;
+	border-radius   : 10px;
 }
 
 .game-card.inactive {
 	background-color: #eee;
-	color: #666;
+	color           : #666;
 }
 
 .game-card.red {
@@ -53,7 +53,7 @@
 
 .backside {
 	background: green;
-	color: white;
+	color     : white;
 }
 
 .backside.inactive {
@@ -64,8 +64,8 @@
 
 .smooth-dnd-container.horizontal {
 	display: flex !important;
-	width: 100%;
-	height: 100%;
+	width  : 100%;
+	height : 100%;
 }
 
 .smooth-dnd-draggable-wrapper {
@@ -73,30 +73,30 @@
 }
 
 .draggable-container {
-	height: 12vh;
+	height    : 12vh;
 	background: azure;
 }
 
 #selected-container.active>.smooth-dnd-container:empty::after {
-	display: flex;
-  justify-content: center;
-  align-items: center;
-	content: "Tap cards to select";
-	color: #666;
-	width: 100%;
-	height: 100%;
+	display        : flex;
+	justify-content: center;
+	align-items    : center;
+	content        : "Tap cards to select";
+	color          : #666;
+	width          : 100%;
+	height         : 100%;
 }
 
 
 /* TABLE */
 
 .table-container {
-	position: relative;
-	width: 100%;
-	height: 22vh;
-	padding: 1vh;
-	display: flex;
-	background: url('/frontend/assets/simple-wood-texture.jpg');
+	position  : relative;
+	width     : 100%;
+	height    : 22vh;
+	padding   : 1vh;
+	display   : flex;
+	background: url('/assets/simple-wood-texture.jpg');
 }
 
 .pile-container {
@@ -104,33 +104,33 @@
 }
 
 .top-container {
-	display: flex;
+	display        : flex;
 	justify-content: center;
-	position: relative;
-	z-index: 2;
+	position       : relative;
+	z-index        : 2;
 }
 
 .drawable-container {
-	display: flex;
+	display        : flex;
 	justify-content: center;
-	position: relative;
-	margin-top: -3vh;
-	z-index: 1;
+	position       : relative;
+	margin-top     : -3vh;
+	z-index        : 1;
 }
 
 
 .pile-bottom {
 	z-index: 0;
-	margin: -7vh auto 0;
+	margin : -7vh auto 0;
 }
 
 // card size = 1/5 * full width - 1vw == 20% - 1vw
 // in 70% wide pile container: 100% * 2/7 - 1vw
 
 .pile-card {
-	position: relative;
+	position : relative;
 	max-width: calc(100% * (2/7) - 1vw);
-	overflow: hidden;
+	overflow : hidden;
 }
 
 // in 30% wide container: 100% * 2/3 - 1vw
@@ -144,9 +144,8 @@
 }
 
 .deck-container {
-	width: 30%;
-	display: flex;
-	flex-direction: column;
+	width          : 30%;
+	display        : flex;
+	flex-direction : column;
 	justify-content: center;
 }
-

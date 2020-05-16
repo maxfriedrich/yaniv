@@ -1,5 +1,7 @@
 import { h, Component } from 'preact';
 
+import { CardType, GameSeriesStateType, FullPlayerCardsViewType, PartialPlayerCardsViewType } from './api';
+
 import { Container, Draggable } from 'react-smooth-dnd';
 import { applyDrag } from './drag';
 
@@ -7,9 +9,20 @@ import { Card } from './card';
 import { Scores } from './scores';
 import { Pile, Deck } from './table';
 import { NextGameControls } from './next';
-import './style';
 
-export class Game extends Component {
+interface GameComponentPropsType { gameId?: string; playerId?: string; debug?: boolean, path: string }
+
+interface GameComponentStateType {
+	selected: CardType[];
+	sortedCards: CardType[];
+	cardOnDeck?: CardType;
+	serverState: GameSeriesStateType;
+}
+
+export class Game extends Component<GameComponentPropsType, GameComponentStateType> {
+	scheduled?: ReturnType<typeof setTimeout>
+	source?: EventSource
+
 	constructor() {
 		super();
 		this.state = {
@@ -25,8 +38,8 @@ export class Game extends Component {
 					state: 'waitingForSeriesStart'
 				},
 				currentGame: null,
-				scores: {},
-				scoresDiff: {}
+				scores: new Map(),
+				scoresDiff: new Map()
 			}
 		};
 		this.scheduled = null;
@@ -40,7 +53,7 @@ export class Game extends Component {
 
 	myName = () => this.state.serverState.players.find(p => p.id === this.state.serverState.me).name;
 
-	playerCards = (playerId) => {
+	playerCards = (playerId): CardType[] | number => {
 		if (!this.isCurrentGame() && !this.isPastGame()) {
 			return null;
 		}
@@ -48,8 +61,16 @@ export class Game extends Component {
 			const myCards = this.state.serverState.currentGame.me.cards;
 			return this.isPastGame() ? myCards : myCards.length;
 		}
-		const otherPlayer = this.state.serverState.currentGame.otherPlayers.find(p => p.id === playerId);
-		return this.isPastGame() ? otherPlayer.cards : otherPlayer.numCards;
+		const otherPlayers = this.state.serverState.currentGame.otherPlayers;
+		console.log('otherplayers:', otherPlayers);
+		if (otherPlayers.length === 0) {
+			return null;
+		}
+		
+		// TODO: this is not nice but I don't know any better
+		return 'cards' in otherPlayers[0] ?
+			(otherPlayers as FullPlayerCardsViewType[]).find(p => p.id === playerId).cards :
+			(otherPlayers as PartialPlayerCardsViewType[]).find(p => p.id === playerId).numCards;
 	}
 
 	playerInfo = () => {
@@ -67,10 +88,9 @@ export class Game extends Component {
 	}
 
 	// `excluded` can be null, a card, or an array of cards
-	updateSortedCards = (serverCards, excluded) => {
+	updateSortedCards = (serverCards, excluded?: CardType[]) => {
 		const isExcluded = (id) => {
 			if (!excluded) return false;
-			if (excluded.id) return excluded.id === id;
 			return excluded.some(e => e.id === id);
 		};
 		
@@ -126,7 +146,8 @@ export class Game extends Component {
 	}
 
 	componentWillUnmount = () => {
-		this.source = null;
+		if (this.scheduled) clearTimeout(this.scheduled);
+		if (this.source) this.source.close();
 	}
 
 	selectCard = (card) => () => {
@@ -268,7 +289,7 @@ export class Game extends Component {
 			}).catch(err => console.log(err));
 	}
 
-	render = ({ debug }, { selected, sortedCards, cardOnDeck, serverState }) => (
+	render = ({ debug }: GameComponentPropsType, { selected, sortedCards, cardOnDeck, serverState }: GameComponentStateType) => (
 		<div class="game">
 			<Scores players={this.playerInfo()} showScoreDiff={serverState && (serverState.state.state === 'waitingForNextGame' || serverState.state.state === 'gameOver')} />
 
@@ -301,8 +322,8 @@ export class Game extends Component {
 								nextGameAction={this.nextGame}
 							/> : (
 								<div>
-									<button class="btn btn-primary mr-2" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending || selected.length === 0} onClick={this.throw}>Throw</button>
-									<button class="btn btn-primary" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending || selected.length > 0} onClick={this.yaniv}>Yaniv</button>
+									<button class="btn btn-primary mr-2" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending !== null || selected.length === 0} onClick={this.throw}>Throw</button>
+									<button class="btn btn-primary" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending !== null || selected.length > 0} onClick={this.yaniv}>Yaniv</button>
 								</div>)}
 					</div>
 

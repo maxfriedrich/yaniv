@@ -153,7 +153,7 @@ export class Join extends Component {
 			.catch(err => console.log(err));
 	}
 
-	joinLink = () =>  `${window.location.origin}/join/${this.props.gameId}`
+	joinLink = () => `${window.location.origin}/join/${this.props.gameId}`
 
 	updateName = (e) => this.setState({ name: e.target.value })
 
@@ -176,7 +176,7 @@ export class Join extends Component {
 		<div>
 			{gameId ? (
 				playerId ? (
-				// Joined, waiting for players
+					// Joined, waiting for players
 					<div class="card my-2">
 						<div class="card-header">Waiting for players…</div>
 						<div class="card-body">
@@ -184,7 +184,7 @@ export class Join extends Component {
 							<ul class="list-group">
 								{players.map(player => (
 									<li class="list-group-item py-2 d-flex justify-content-between align-items-middle">
-										<span>{player.name}&nbsp;{player.id === playerId ? <span class="badge badge-primary">ME</span>: <span />}</span>
+										<span>{player.name}&nbsp;{player.id === playerId ? <span class="badge badge-primary">ME</span> : <span />}</span>
 										{player.id === playerId ? <span /> : <button class="btn py-0 close" onClick={this.removePlayer(player.id)}>&times;</button>}
 									</li>))}
 							</ul>
@@ -194,35 +194,35 @@ export class Join extends Component {
 						</div>
 					</div>
 				) : (
-				// Join Game
+						// Join Game
+						<div class="card my-2">
+							<div class="card-body">
+								<form>
+									<div class="form-group">
+										<input id="name" type="text" class="form-control" placeholder="Enter name" value={this.state.name}
+											onChange={this.updateName}
+										/>
+									</div>
+									<button class="btn btn-primary" disabled={!this.state.name || this.state.name.trim().length === 0} onClick={this.joinGame}>Join {players.length} Player{players.length !== 1 ? 's' : ''}</button>
+								</form>
+							</div>
+						</div>
+					)
+			) : (
+					// New Game
 					<div class="card my-2">
 						<div class="card-body">
 							<form>
 								<div class="form-group">
-									<input id="name" type="text" class="form-control" placeholder="Enter name" value={this.state.name}
+									<input type="text" class="form-control" id="name" placeholder="Enter name" value={this.state.name}
 										onChange={this.updateName}
 									/>
 								</div>
-								<button class="btn btn-primary" disabled={!this.state.name || this.state.name.trim().length === 0} onClick={this.joinGame}>Join {players.length} Player{players.length !== 1 ? 's' : ''}</button>
+								<button class="btn btn-primary" disabled={!this.state.name || this.state.name.trim().length === 0} onClick={this.createGame}>New Game</button>
 							</form>
 						</div>
 					</div>
-				)
-			) : (
-			// New Game
-				<div class="card my-2">
-					<div class="card-body">
-						<form>
-							<div class="form-group">
-								<input type="text" class="form-control" id="name" placeholder="Enter name" value={this.state.name}
-									onChange={this.updateName}
-								/>
-							</div>
-							<button class="btn btn-primary" disabled={!this.state.name || this.state.name.trim().length === 0} onClick={this.createGame}>New Game</button>
-						</form>
-					</div>
-				</div>
-			)}
+				)}
 			{debug ? (<pre>{JSON.stringify(this.state)} {JSON.stringify(this.props)}</pre>) : <div />}
 		</div>
 	)

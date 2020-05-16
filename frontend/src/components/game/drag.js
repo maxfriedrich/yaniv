@@ -1,3 +1,4 @@
+// https://github.com/kutlugsahin/ngx-smooth-dnd/blob/1d733a8/apps/demo/src/pages/utils.ts
 export const applyDrag = (arr, dragResult) => {
 	const { removedIndex, addedIndex, payload } = dragResult;
 	if (removedIndex === null && addedIndex === null) return arr;
