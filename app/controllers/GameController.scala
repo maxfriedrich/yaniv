@@ -43,17 +43,21 @@ class GameController @Inject() (implicit as: ActorSystem, val controllerComponen
     val result = for {
       gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
       payload         <- requestJson[JoinGameClientResponse](request)
-      info = PlayerInfo(id = idService.nextId(), name = payload.name)
+      playerId = idService.nextId()
+      info     = PlayerInfo(id = playerId, name = payload.name)
       newSeriesState <- GameSeriesLogic.addPlayer(gameSeriesState, info)
       _              <- gamesService.update(gameSeriesId, newSeriesState)
-    } yield Ok(Json.toJson(Map("id" -> info.id)))
+      secret = idService.nextId()
+      _ <- gamesService.storeSecret(gameSeriesId, playerId, secret)
+    } yield Ok(Json.toJson(Map("id" -> info.id, "secret" -> secret)))
     resultOrError(result)
   }
 
-  def remove(gameSeriesId: String, playerId: String) = Action { request =>
+  def remove(gameSeriesId: String, playerId: String, playerToRemoveId: String) = Action { request =>
     val result = for {
-      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
-      newSeriesState  <- GameSeriesLogic.removePlayer(gameSeriesState, playerId)
+      payload         <- requestJson[SecretClientResponse](request)
+      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId, playerId, payload.secret)
+      newSeriesState  <- GameSeriesLogic.removePlayer(gameSeriesState, playerToRemoveId)
       _               <- gamesService.update(gameSeriesId, newSeriesState)
     } yield Ok(Json.toJson(Map("ok" -> "ok")))
     resultOrError(result)
@@ -73,9 +77,10 @@ class GameController @Inject() (implicit as: ActorSystem, val controllerComponen
     resultOrError(result)
   }
 
-  def start(gameSeriesId: String) = Action { request =>
+  def start(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
-      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
+      payload         <- requestJson[SecretClientResponse](request)
+      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId, playerId, payload.secret)
       newSeriesState  <- GameSeriesLogic.startSeries(gameSeriesState)
       _               <- gamesService.update(gameSeriesId, newSeriesState)
     } yield Ok(Json.toJson(Map("ok" -> "ok")))
@@ -84,23 +89,24 @@ class GameController @Inject() (implicit as: ActorSystem, val controllerComponen
 
   def next(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
-      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
+      payload         <- requestJson[SecretClientResponse](request)
+      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId, playerId, payload.secret)
       newSeriesState  <- GameSeriesLogic.acceptGameEnding(gameSeriesState, playerId)
       _               <- gamesService.update(gameSeriesId, newSeriesState)
     } yield Ok(Json.toJson(Map("ok" -> "ok")))
     resultOrError(result)
   }
 
-  def state(gameSeriesId: String, playerId: String) = Action { request =>
+  def state(gameSeriesId: String, playerId: String, secret: String) = Action { request =>
     val result = for {
-      stateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
+      stateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId, secret)
     } yield Ok(Json.toJson(stateView))
     resultOrError(result)
   }
 
-  def stateStream(gameSeriesId: String, playerId: String) = Action { request =>
+  def stateStream(gameSeriesId: String, playerId: String, secret: String) = Action { request =>
     val result = for {
-      stream <- gamesService.getGameSeriesStateStream(gameSeriesId, playerId)
+      stream <- gamesService.getGameSeriesStateStream(gameSeriesId, playerId, secret)
     } yield sseStream[GameSeriesStateView](stream)
     resultOrError(result)
   }
@@ -119,55 +125,56 @@ class GameController @Inject() (implicit as: ActorSystem, val controllerComponen
 
   def throwCards(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
-      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
-      payload         <- requestJson[ThrowCardsClientResponse](request)
+      payload <- requestJson[ThrowCardsClientResponse](request)
       cards = payload.cards
-      gameState    <- getGameState(gameSeriesState)
-      newGameState <- GameLogic.throwCards(gameState, playerId, cards)
+      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId, playerId, payload.secret)
+      gameState       <- getGameState(gameSeriesState)
+      newGameState    <- GameLogic.throwCards(gameState, playerId, cards)
       newSeriesState = GameSeriesLogic.updateGameState(gameSeriesState, newGameState)
       _             <- gamesService.update(gameSeriesId, newSeriesState)
-      gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
+      gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId, payload.secret)
     } yield Ok(Json.toJson(gameStateView))
     resultOrError(result)
   }
 
   def draw(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
-      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
-      payload         <- requestJson[DrawCardClientResponse](request)
+      payload <- requestJson[DrawCardClientResponse](request)
       source = payload.source
-      gameState    <- getGameState(gameSeriesState)
-      newGameState <- GameLogic.drawCard(gameState, playerId, source)
+      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId, playerId, payload.secret)
+      gameState       <- getGameState(gameSeriesState)
+      newGameState    <- GameLogic.drawCard(gameState, playerId, source)
       newSeriesState = GameSeriesLogic.updateGameState(gameSeriesState, newGameState)
       _             <- gamesService.update(gameSeriesId, newSeriesState)
-      gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
+      gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId, payload.secret)
     } yield Ok(Json.toJson(gameStateView))
     resultOrError(result)
   }
 
   def drawThrow(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
-      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
-      _               <- Either.cond(GameSeriesLogic.isDrawThrowTimingAccepted(gameSeriesState), (), "Draw-throw timing not accepted")
       payload         <- requestJson[DrawThrowCardClientResponse](request)
+      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId, playerId, payload.secret)
+      _               <- Either.cond(GameSeriesLogic.isDrawThrowTimingAccepted(gameSeriesState), (), "Draw-throw timing not accepted")
       card = payload.card
       gameState    <- getGameState(gameSeriesState)
       newGameState <- GameLogic.drawThrowCard(gameState, playerId, card)
       newSeriesState = GameSeriesLogic.updateGameState(gameSeriesState, newGameState)
       _             <- gamesService.update(gameSeriesId, newSeriesState)
-      gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
+      gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId, payload.secret)
     } yield Ok(Json.toJson(gameStateView))
     resultOrError(result)
   }
 
   def yaniv(gameSeriesId: String, playerId: String) = Action { request =>
     val result = for {
-      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId)
+      payload         <- requestJson[SecretClientResponse](request)
+      gameSeriesState <- gamesService.getGameSeriesState(gameSeriesId, playerId, payload.secret)
       gameState       <- getGameState(gameSeriesState)
       newGameState    <- GameLogic.callYaniv(gameState, playerId)
       newSeriesState = GameSeriesLogic.updateGameState(gameSeriesState, newGameState)
       _             <- gamesService.update(gameSeriesId, newSeriesState)
-      gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId)
+      gameStateView <- gamesService.getGameSeriesStateView(gameSeriesId, playerId, payload.secret)
     } yield Ok(Json.toJson(gameStateView))
     resultOrError(result)
   }

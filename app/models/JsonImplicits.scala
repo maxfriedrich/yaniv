@@ -31,7 +31,14 @@ object JsonImplicits {
   implicit val drawableCardReads: Reads[DrawableCard]   = Json.reads[DrawableCard]
   implicit val drawableCardWrites: Writes[DrawableCard] = Json.writes[DrawableCard]
 
-  case class ThrowCardsClientResponse(cards: Seq[Card])
+  trait ClientResponse {
+    val secret: String
+  }
+
+  case class SecretClientResponse(secret: String) extends ClientResponse
+  implicit val secretClientResponseReads: Reads[SecretClientResponse] = Json.reads[SecretClientResponse]
+
+  case class ThrowCardsClientResponse(secret: String, cards: Seq[Card]) extends ClientResponse
   implicit val throwCardsClientResponseReads: Reads[ThrowCardsClientResponse] = Json.reads[ThrowCardsClientResponse]
 
   implicit val drawSourceReads: Reads[DrawSource] = Reads {
@@ -44,10 +51,10 @@ object JsonImplicits {
     case s => JsError(s"Not a valid draw source: $s")
   }
 
-  case class DrawCardClientResponse(source: DrawSource)
+  case class DrawCardClientResponse(secret: String, source: DrawSource) extends ClientResponse
   implicit val drawCardClientResponseReads: Reads[DrawCardClientResponse] = Json.reads[DrawCardClientResponse]
 
-  case class DrawThrowCardClientResponse(card: Card)
+  case class DrawThrowCardClientResponse(secret: String, card: Card) extends ClientResponse
   implicit val drawThrowCardClientResponseReads: Reads[DrawThrowCardClientResponse] =
     Json.reads[DrawThrowCardClientResponse]
 
