@@ -1,7 +1,7 @@
 import { h } from 'preact'
 import { PlayerInfoType, GameStateType, SeriesStateType, EndingType } from '../..';
 
-const renderSeriesState = (players: Array<PlayerInfoType>, state: SeriesStateType): string => {
+const renderSeriesState = (players: PlayerInfoType[], state: SeriesStateType): string => {
 	if (state.state === 'gameOver') {
 		const winnerName = players.find(p => p.id === state.winner).name;
 		return `Game over! Winner: ${winnerName}`;
@@ -9,7 +9,7 @@ const renderSeriesState = (players: Array<PlayerInfoType>, state: SeriesStateTyp
 	return '';
 };
 
-const renderEnding = (players: Array<PlayerInfoType>, ending?: EndingType): string => {
+const renderEnding = (players: PlayerInfoType[], ending?: EndingType): string => {
 	if (!ending) return '';
 	if (ending.type === 'yaniv') {
 		const caller = players.find(p => p.id === ending.winner);
@@ -36,7 +36,7 @@ const renderNextAction = (state: string, alreadyAccepted: boolean) => {
 	return 'Next Game';
 };
 
-export interface NextGameControlsProps { players: Array<PlayerInfoType>; currentGame?: GameStateType; seriesState: SeriesStateType; nextGameAction: () => void; alreadyAccepted: boolean }
+export interface NextGameControlsProps { players: PlayerInfoType[]; currentGame?: GameStateType; seriesState: SeriesStateType; nextGameAction: () => void; alreadyAccepted: boolean }
 
 export const NextGameControls = ({ players, currentGame, seriesState, nextGameAction, alreadyAccepted }: NextGameControlsProps) => (
 	<div class="d-flex justify-content-between align-items-center">

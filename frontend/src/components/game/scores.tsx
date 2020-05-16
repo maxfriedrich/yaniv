@@ -2,7 +2,7 @@ import { h } from 'preact';
 
 import { CardType, ExtendedPlayerInfoType } from '../..'
 
-const cardsStrings = (cards?: Array<CardType> | number): Array<string> => {
+const cardsStrings = (cards?: CardType[] | number): string[] => {
 	if (!cards) {
 		return [];
 	}
@@ -12,8 +12,8 @@ const cardsStrings = (cards?: Array<CardType> | number): Array<string> => {
 	return cards.sort((a, b) => a.endValue - b.endValue).map(c => c.gameRepresentation.join(''));
 };
 
-const renderScoreDiff = (scores: Array<number>) => {
-	const rendered: Array<string> = [];
+const renderScoreDiff = (scores: number[]) => {
+	const rendered: string[] = [];
 	scores.map(score => {
 		if (score > 0) {
 			rendered.push(`+${score}`);
@@ -33,7 +33,7 @@ const listGroupClasses = (active: boolean) => `${basicClasses} ${active ? active
 
 const meBadgeClasses = (active: boolean) => `badge ${active ? 'badge-light' : 'badge-primary'}`;
 
-export interface ScoresProps { players: Array<ExtendedPlayerInfoType>; showScoreDiff: boolean}
+export interface ScoresProps { players: ExtendedPlayerInfoType[]; showScoreDiff: boolean}
 
 export const Scores = ({ players, showScoreDiff }: ScoresProps) => (
 	<div class="card my-2">

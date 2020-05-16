@@ -5,7 +5,7 @@ import { Card } from './card'
 
 const drawCard = (drawAction: (card: CardType) => void, card: CardType) => () => drawAction(card);
 
-export interface PileProps { pile: PileType; disabled: boolean; drawAction: () => void}
+export interface PileProps { pile: PileType; disabled: boolean; drawAction: (card: CardType) => void}
 
 export const Pile = ({ pile, disabled, drawAction }: PileProps) => (
 	<div class="pile-container">
