@@ -1,7 +1,18 @@
 import { h, Component } from 'preact';
 import { route } from 'preact-router';
 
-export class Join extends Component {
+export interface JoinComponentPropsType {
+	playerId: string;
+	gameId: string;
+}
+
+export interface JoinComponentStateType {
+	players: [];
+	name: string;
+}
+
+export class Join extends Component<JoinComponentPropsType, JoinComponentStateType> {
+	source?: EventSource;
 
 	constructor() {
 		super();
@@ -43,7 +54,7 @@ export class Join extends Component {
 		console.log('trying to get in-game stream...');
 		if (!this.props.gameId || !this.props.playerId) return false;
 		console.log('getting in-game stream...');
-		const that = this;
+		this.source?.close()
 		this.source = new EventSource(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/state/stream`);
 		this.source.onmessage = (event) => {
 			const newServerState = JSON.parse(event.data.substring(5));
@@ -51,7 +62,7 @@ export class Join extends Component {
 			console.log(newServerState);
 			this.setState({ players: newServerState.players });
 			if (newServerState.state && newServerState.state.state === 'gameIsRunning') {
-				route(`/game/${that.props.gameId}/player/${that.props.playerId}`);
+				route(`/game/${this.props.gameId}/player/${this.props.playerId}`);
 			}
 		};
 		return true;
@@ -65,7 +76,7 @@ export class Join extends Component {
 
 	componentWillUnmount = () => {
 		console.log('component will unmount');
-		this.source = null;
+		this.source?.close();
 	}
 
 	createGame = (e) => {
