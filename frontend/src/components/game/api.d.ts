@@ -54,6 +54,8 @@ export interface GameSeriesStateType {
 
 export interface SeriesStateType { 
   state: 'gameIsRunning' | 'waitingForNextGame' | 'waitingForSeriesStart' | 'gameOver';
-  winner?: string; }
+  winner?: string; 
+  acceptedPlayers?: string[];
+}
 export interface GameResultType { ending: EndingType; points: Map<string, number> }
 export interface EndingType { type: 'yaniv' | 'asaf' | 'empty'; winner; points; caller?; winnerPoints? }

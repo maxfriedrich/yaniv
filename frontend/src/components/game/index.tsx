@@ -10,7 +10,7 @@ import { Scores } from './scores';
 import { Pile, Deck } from './table';
 import { NextGameControls } from './next';
 
-interface GameComponentPropsType { gameId: string; playerId: string; debug: boolean }
+interface GameComponentPropsType { gameId?: string; playerId?: string; debug?: boolean, path: string }
 
 interface GameComponentStateType {
 	selected: CardType[];
@@ -289,7 +289,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 			}).catch(err => console.log(err));
 	}
 
-	render = ({ debug }, { selected, sortedCards, cardOnDeck, serverState }) => (
+	render = ({ debug }: GameComponentPropsType, { selected, sortedCards, cardOnDeck, serverState }: GameComponentStateType) => (
 		<div class="game">
 			<Scores players={this.playerInfo()} showScoreDiff={serverState && (serverState.state.state === 'waitingForNextGame' || serverState.state.state === 'gameOver')} />
 
@@ -322,8 +322,8 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 								nextGameAction={this.nextGame}
 							/> : (
 								<div>
-									<button class="btn btn-primary mr-2" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending || selected.length === 0} onClick={this.throw}>Throw</button>
-									<button class="btn btn-primary" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending || selected.length > 0} onClick={this.yaniv}>Yaniv</button>
+									<button class="btn btn-primary mr-2" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending !== null || selected.length === 0} onClick={this.throw}>Throw</button>
+									<button class="btn btn-primary" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending !== null || selected.length > 0} onClick={this.yaniv}>Yaniv</button>
 								</div>)}
 					</div>
 
