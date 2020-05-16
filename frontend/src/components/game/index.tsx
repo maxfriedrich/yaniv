@@ -4,13 +4,15 @@ import { CardType, GameSeriesStateType, FullPlayerCardsViewType, PartialPlayerCa
 
 import { Container, Draggable } from 'react-smooth-dnd';
 import { applyDrag } from './drag';
+import { withCookies } from 'react-cookie';
 
 import { Card } from './card';
 import { Scores } from './scores';
 import { Pile, Deck } from './table';
 import { NextGameControls } from './next';
 
-interface GameComponentPropsType { gameId?: string; playerId?: string; debug?: boolean, path: string }
+
+interface GameComponentPropsType { gameId?: string; playerId?: string; debug?: boolean, path: string, cookies? }
 
 interface GameComponentStateType {
 	selected: CardType[];
@@ -19,7 +21,7 @@ interface GameComponentStateType {
 	serverState: GameSeriesStateType;
 }
 
-export class Game extends Component<GameComponentPropsType, GameComponentStateType> {
+class Game extends Component<GameComponentPropsType, GameComponentStateType> {
 	scheduled?: ReturnType<typeof setTimeout>
 	source?: EventSource
 
@@ -45,6 +47,12 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 		this.scheduled = null;
 	}
 
+	getSecret = () => {
+		const infoCookie = this.props.cookies.get(`${this.props.gameId}-${this.props.playerId}`);
+		console.log('secret from cookie:', infoCookie.secret);
+		return infoCookie ? infoCookie.secret : null;
+	}
+
 	isCurrentGame = () => this.state.serverState.state.state === 'gameIsRunning';
 
 	isPastGame = () => this.state.serverState.state.state === 'waitingForNextGame' || this.state.serverState.state.state === 'gameOver';
@@ -62,7 +70,6 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 			return this.isPastGame() ? myCards : myCards.length;
 		}
 		const otherPlayers = this.state.serverState.currentGame.otherPlayers;
-		console.log('otherplayers:', otherPlayers);
 		if (otherPlayers.length === 0) {
 			return null;
 		}
@@ -104,7 +111,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 
 	componentDidMount = () => {
 		console.log('game component did mount');
-		fetch(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/state`)
+		fetch(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/state?secret=${this.getSecret()}`)
 			.then(response => response.json())
 			.then((initialServerState) => {
 				console.log('got initial server state:', initialServerState);
@@ -113,7 +120,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 			})
 			.catch(err => console.log(err));
 
-		this.source = new EventSource(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/state/stream`);
+		this.source = new EventSource(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/state/stream?secret=${this.getSecret()}`);
 		this.source.onmessage = (event) => {
 			const newServerState = JSON.parse(event.data.substring(5));
 			console.log('Got new server state from stream:', newServerState);
@@ -175,7 +182,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 		fetch(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/draw`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ source: card.id })
+			body: JSON.stringify({ source: card.id, secret: this.getSecret() })
 		})
 			.then((response) => response.json())
 			.then((newServerState) => {
@@ -197,7 +204,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 		fetch(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/draw`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ source: 'deck' })
+			body: JSON.stringify({ source: 'deck', secret: this.getSecret() })
 		})
 			.then((response) => response.json())
 			.then((newServerState) => {
@@ -226,7 +233,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 		fetch(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/throw`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ cards: cardsToThrow })
+			body: JSON.stringify({ cards: cardsToThrow, secret: this.getSecret() })
 		})
 			.then((response) => response.json())
 			.then((newServerState) => {
@@ -245,7 +252,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 		fetch(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/drawThrow`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ card: this.state.serverState.currentGame.me.drawThrowable.id })
+			body: JSON.stringify({ card: this.state.serverState.currentGame.me.drawThrowable.id, secret: this.getSecret() })
 		})
 			.then((response) => response.json())
 			.then((newServerState) => {
@@ -263,7 +270,9 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 		console.log(this.state);
 		console.log('Calling yaniv');
 		fetch(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/yaniv`, {
-			method: 'POST'
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ secret: this.getSecret() })
 		})
 			.then((response) => response.json())
 			.then((newServerState) => {
@@ -279,7 +288,9 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 	nextGame = () => {
 		console.log('next game');
 		fetch(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/next`, {
-			method: 'POST'
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ secret: this.getSecret() })
 		})
 			.then((response) => response.json())
 			.then((newServerState) => {
@@ -322,8 +333,8 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 								nextGameAction={this.nextGame}
 							/> : (
 								<div>
-									<button class="btn btn-primary mr-2" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending !== null || selected.length === 0} onClick={this.throw}>Throw</button>
-									<button class="btn btn-primary" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending !== null || selected.length > 0} onClick={this.yaniv}>Yaniv</button>
+									<button class="btn btn-primary mr-2" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending === null || selected.length === 0} onClick={this.throw}>Throw</button>
+									<button class="btn btn-primary" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending === null || selected.length > 0} onClick={this.yaniv}>Yaniv</button>
 								</div>)}
 					</div>
 
@@ -366,3 +377,6 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 		</div>
 	)
 }
+
+ // @ts-ignore: Doesn't work with react-cookie and Preact
+export default withCookies(Game);

@@ -1,10 +1,11 @@
 import { h, Component } from 'preact';
 import { route } from 'preact-router';
+import { withCookies } from 'react-cookie';
 
-export class Join extends Component {
+class Join extends Component {
 
-	constructor() {
-		super();
+	constructor(props) {
+		super(props);
 		this.state = {
 			players: [],
 			name: ''
@@ -44,7 +45,7 @@ export class Join extends Component {
 		if (!this.props.gameId || !this.props.playerId) return false;
 		console.log('getting in-game stream...');
 		const that = this;
-		this.source = new EventSource(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/state/stream`);
+		this.source = new EventSource(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/state/stream?secret=${this.getSecret()}`);
 		this.source.onmessage = (event) => {
 			const newServerState = JSON.parse(event.data.substring(5));
 			console.log('Got new server state from in-game stream:');
@@ -66,6 +67,12 @@ export class Join extends Component {
 	componentWillUnmount = () => {
 		console.log('component will unmount');
 		this.source = null;
+	}
+
+	getSecret = () => {
+		const infoCookie = this.props.cookies.get(`${this.props.gameId}-${this.props.playerId}`);
+		console.log('secret from cookie:', infoCookie.secret);
+		return infoCookie ? infoCookie.secret : null;
 	}
 
 	createGame = (e) => {
@@ -98,6 +105,9 @@ export class Join extends Component {
 							else {
 								const playerId = data.id;
 								console.log('Got player id:', playerId);
+								const secret = data.secret;
+								console.log('Got secret:', secret);
+								this.props.cookies.set(`${gameId}-${playerId}`, { playerId: playerId, secret: secret });
 								this.props.playerId = playerId; // why is this necessary?
 								this.getGameInfo();
 								this.setupStream();
@@ -127,6 +137,9 @@ export class Join extends Component {
 				else {
 					const playerId = data.id;
 					console.log('Got player id:', playerId);
+					const secret = data.secret;
+					console.log('Got secret:', playerId);
+					this.props.cookies.set(`${this.props.gameId}-${playerId}`, {playerId: playerId, secret: secret});
 					this.props.playerId = playerId;
 					this.getGameInfo();
 					this.setupStream();
@@ -139,8 +152,10 @@ export class Join extends Component {
 	startGame = (e) => {
 		e.preventDefault();
 		console.log('Starting game...');
-		fetch(`/rest/game/${this.props.gameId}/start`, {
-			method: 'POST'
+		fetch(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/start`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({secret: this.getSecret() })
 		})
 			.then(response => response.json())
 			.then((data) => {
@@ -159,8 +174,10 @@ export class Join extends Component {
 
 	removePlayer = (playerId) => () => {
 		console.log('remove player', playerId);
-		fetch(`/rest/game/${this.props.gameId}/remove/${playerId}`, {
-			method: 'POST'
+		fetch(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/remove/${playerId}`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ secret: this.getSecret() })
 		})
 			.then(response => response.json())
 			.then((data) => {
@@ -223,7 +240,9 @@ export class Join extends Component {
 						</div>
 					</div>
 				)}
-			{debug ? (<pre>{JSON.stringify(this.state)} {JSON.stringify(this.props)}</pre>) : <div />}
+			{true ? (<pre>{JSON.stringify(this.state)} {JSON.stringify(this.props)}</pre>) : <div />}
 		</div>
 	)
 }
+
+export default withCookies(Join);
