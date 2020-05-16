@@ -10,7 +10,7 @@ import { Scores } from './scores';
 import { Pile, Deck } from './table';
 import { NextGameControls } from './next';
 
-interface GameComponentPropsType { gameId: string; playerId: string; debug: boolean }
+interface GameComponentPropsType { gameId: string; playerId: string; debug: boolean, path: string }
 
 interface GameComponentStateType {
 	selected: CardType[];
