@@ -1,18 +1,7 @@
 import { h, Component } from 'preact';
 import { route } from 'preact-router';
 
-export interface JoinComponentPropsType {
-	playerId: string;
-	gameId: string;
-}
-
-export interface JoinComponentStateType {
-	players: [];
-	name: string;
-}
-
-export class Join extends Component<JoinComponentPropsType, JoinComponentStateType> {
-	source?: EventSource;
+export class Join extends Component {
 
 	constructor() {
 		super();
@@ -54,7 +43,7 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 		console.log('trying to get in-game stream...');
 		if (!this.props.gameId || !this.props.playerId) return false;
 		console.log('getting in-game stream...');
-		if (this.source) this.source.close();
+		const that = this;
 		this.source = new EventSource(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/state/stream`);
 		this.source.onmessage = (event) => {
 			const newServerState = JSON.parse(event.data.substring(5));
@@ -62,7 +51,7 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 			console.log(newServerState);
 			this.setState({ players: newServerState.players });
 			if (newServerState.state && newServerState.state.state === 'gameIsRunning') {
-				route(`/game/${this.props.gameId}/player/${this.props.playerId}`);
+				route(`/game/${that.props.gameId}/player/${that.props.playerId}`);
 			}
 		};
 		return true;
@@ -76,7 +65,7 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 
 	componentWillUnmount = () => {
 		console.log('component will unmount');
-		if (this.source) this.source.close();
+		this.source = null;
 	}
 
 	createGame = (e) => {
@@ -93,6 +82,7 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 				}
 				else {
 					const gameId = data.id;
+					this.props.gameId = gameId;
 					console.log('Joining game...');
 					fetch(`/rest/game/${this.props.gameId}/join`, {
 						method: 'POST',
@@ -108,6 +98,7 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 							else {
 								const playerId = data.id;
 								console.log('Got player id:', playerId);
+								this.props.playerId = playerId; // why is this necessary?
 								this.getGameInfo();
 								this.setupStream();
 								route(`/join/${gameId}/player/${playerId}`);
@@ -136,6 +127,7 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 				else {
 					const playerId = data.id;
 					console.log('Got player id:', playerId);
+					this.props.playerId = playerId;
 					this.getGameInfo();
 					this.setupStream();
 					route(`/join/${this.props.gameId}/player/${playerId}`);
@@ -161,7 +153,7 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 			.catch(err => console.log(err));
 	}
 
-	joinLink = () =>  `${window.location.origin}/join/${this.props.gameId}`
+	joinLink = () => `${window.location.origin}/join/${this.props.gameId}`
 
 	updateName = (e) => this.setState({ name: e.target.value })
 
@@ -184,7 +176,7 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 		<div>
 			{gameId ? (
 				playerId ? (
-				// Joined, waiting for players
+					// Joined, waiting for players
 					<div class="card my-2">
 						<div class="card-header">Waiting for players…</div>
 						<div class="card-body">
@@ -192,7 +184,7 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 							<ul class="list-group">
 								{players.map(player => (
 									<li class="list-group-item py-2 d-flex justify-content-between align-items-middle">
-										<span>{player.name}&nbsp;{player.id === playerId ? <span class="badge badge-primary">ME</span>: <span />}</span>
+										<span>{player.name}&nbsp;{player.id === playerId ? <span class="badge badge-primary">ME</span> : <span />}</span>
 										{player.id === playerId ? <span /> : <button class="btn py-0 close" onClick={this.removePlayer(player.id)}>&times;</button>}
 									</li>))}
 							</ul>
@@ -202,35 +194,35 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 						</div>
 					</div>
 				) : (
-				// Join Game
+						// Join Game
+						<div class="card my-2">
+							<div class="card-body">
+								<form>
+									<div class="form-group">
+										<input id="name" type="text" class="form-control" placeholder="Enter name" value={this.state.name}
+											onChange={this.updateName}
+										/>
+									</div>
+									<button class="btn btn-primary" disabled={!this.state.name || this.state.name.trim().length === 0} onClick={this.joinGame}>Join {players.length} Player{players.length !== 1 ? 's' : ''}</button>
+								</form>
+							</div>
+						</div>
+					)
+			) : (
+					// New Game
 					<div class="card my-2">
 						<div class="card-body">
 							<form>
 								<div class="form-group">
-									<input id="name" type="text" class="form-control" placeholder="Enter name" value={this.state.name}
+									<input type="text" class="form-control" id="name" placeholder="Enter name" value={this.state.name}
 										onChange={this.updateName}
 									/>
 								</div>
-								<button class="btn btn-primary" disabled={!this.state.name || this.state.name.trim().length === 0} onClick={this.joinGame}>Join {players.length} Player{players.length !== 1 ? 's' : ''}</button>
+								<button class="btn btn-primary" disabled={!this.state.name || this.state.name.trim().length === 0} onClick={this.createGame}>New Game</button>
 							</form>
 						</div>
 					</div>
-				)
-			) : (
-			// New Game
-				<div class="card my-2">
-					<div class="card-body">
-						<form>
-							<div class="form-group">
-								<input type="text" class="form-control" id="name" placeholder="Enter name" value={this.state.name}
-									onChange={this.updateName}
-								/>
-							</div>
-							<button class="btn btn-primary" disabled={!this.state.name || this.state.name.trim().length === 0} onClick={this.createGame}>New Game</button>
-						</form>
-					</div>
-				</div>
-			)}
+				)}
 			{debug ? (<pre>{JSON.stringify(this.state)} {JSON.stringify(this.props)}</pre>) : <div />}
 		</div>
 	)
