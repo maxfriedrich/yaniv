@@ -54,7 +54,7 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 		console.log('trying to get in-game stream...');
 		if (!this.props.gameId || !this.props.playerId) return false;
 		console.log('getting in-game stream...');
-		this.source?.close()
+		if (this.source) this.source.close();
 		this.source = new EventSource(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/state/stream`);
 		this.source.onmessage = (event) => {
 			const newServerState = JSON.parse(event.data.substring(5));
@@ -76,7 +76,7 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 
 	componentWillUnmount = () => {
 		console.log('component will unmount');
-		this.source?.close();
+		if (this.source) this.source.close();
 	}
 
 	createGame = (e) => {
@@ -93,7 +93,6 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 				}
 				else {
 					const gameId = data.id;
-					this.props.gameId = gameId;
 					console.log('Joining game...');
 					fetch(`/rest/game/${this.props.gameId}/join`, {
 						method: 'POST',
@@ -109,7 +108,6 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 							else {
 								const playerId = data.id;
 								console.log('Got player id:', playerId);
-								this.props.playerId = playerId; // why is this necessary?
 								this.getGameInfo();
 								this.setupStream();
 								route(`/join/${gameId}/player/${playerId}`);
@@ -138,7 +136,6 @@ export class Join extends Component<JoinComponentPropsType, JoinComponentStateTy
 				else {
 					const playerId = data.id;
 					console.log('Got player id:', playerId);
-					this.props.playerId = playerId;
 					this.getGameInfo();
 					this.setupStream();
 					route(`/join/${this.props.gameId}/player/${playerId}`);

@@ -1,5 +1,5 @@
 import { h } from 'preact'
-import { PlayerInfoType, GameStateType, SeriesStateType, EndingType } from '../..';
+import { PlayerInfoType, GameStateType, SeriesStateType, EndingType } from './api';
 
 const renderSeriesState = (players: PlayerInfoType[], state: SeriesStateType): string => {
 	if (state.state === 'gameOver') {

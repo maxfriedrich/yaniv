@@ -1,5 +1,6 @@
 import { h, render } from 'preact';
 import Router from 'preact-router';
+import { CookiesProvider } from 'react-cookie';
 
 import 'bootstrap/scss/bootstrap';
 
@@ -14,6 +15,7 @@ render(
 		<nav class="navbar navbar-light bg-light">
 			<a class="navbar-brand" href="/">Yaniv</a>
 		</nav>
+		<CookiesProvider>
 		<Router>
 			<Join path="/" />
 			<Join path="/join/:gameId" />
@@ -21,6 +23,7 @@ render(
 			<Game path="/game/:gameId/player/:playerId" />
 			<EventSourceTest path="/es" />
 		</Router>
+		</CookiesProvider>
 	</div>
 	, document.body
 );

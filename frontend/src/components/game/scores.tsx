@@ -1,6 +1,6 @@
 import { h } from 'preact';
 
-import { CardType, ExtendedPlayerInfoType } from '../..'
+import { CardType, ExtendedPlayerInfoType } from './api'
 
 const cardsStrings = (cards?: CardType[] | number): string[] => {
 	if (!cards) {

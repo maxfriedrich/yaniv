@@ -1,6 +1,6 @@
 import { h, Component } from 'preact';
 
-import { CardType, GameSeriesStateType, FullPlayerCardsViewType, PartialPlayerCardsViewType } from '../..'
+import { CardType, GameSeriesStateType, FullPlayerCardsViewType, PartialPlayerCardsViewType } from './api';
 
 import { Container, Draggable } from 'react-smooth-dnd';
 import { applyDrag } from './drag';
@@ -147,7 +147,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 
 	componentWillUnmount = () => {
 		if (this.scheduled) clearTimeout(this.scheduled);
-		this.source?.close();
+		if (this.source) this.source.close();
 	}
 
 	selectCard = (card) => () => {

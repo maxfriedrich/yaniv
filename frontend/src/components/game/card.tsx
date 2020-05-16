@@ -1,6 +1,6 @@
 import { h } from 'preact';
 
-import { CardType } from '../..'
+import { CardType } from './api'
 
 const color = (card: CardType) => {
 	if (card.id.startsWith('H') || card.id.startsWith('D')) return 'red';
