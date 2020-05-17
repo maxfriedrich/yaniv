@@ -147,7 +147,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 
 	componentWillUnmount = () => {
 		if (this.scheduled) clearTimeout(this.scheduled);
-		if (this.source) this.source.close();
+		this.source?.close();
 	}
 
 	selectCard = (card) => () => {
