@@ -147,7 +147,6 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 
 	componentWillUnmount = () => {
 		if (this.scheduled) clearTimeout(this.scheduled);
-		// optional chaining breaks the build:
 		this.source?.close();
 	}
 
