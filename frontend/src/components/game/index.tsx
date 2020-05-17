@@ -2,13 +2,13 @@ import { h, Component } from 'preact';
 
 import { CardType, GameSeriesStateType, FullPlayerCardsViewType, PartialPlayerCardsViewType } from './api';
 
-import { Container, Draggable } from 'react-smooth-dnd';
 import { applyDrag } from './drag';
 
-import { Card } from './card';
 import { Scores } from './scores';
 import { Pile, Deck } from './table';
+import { Hand } from './hand'; 
 import { NextGameControls } from './next';
+import { Actions } from './actions';
 
 interface GameComponentPropsType { gameId?: string; playerId?: string; debug?: boolean; path: string }
 
@@ -53,7 +53,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 
 	myName = () => this.state.serverState.players.find(p => p.id === this.state.serverState.me).name;
 
-	playerCards = (playerId): CardType[] | number => {
+	playerCards = (playerId: string): CardType[] | number => {
 		if (!this.isCurrentGame() && !this.isPastGame()) {
 			return null;
 		}
@@ -88,7 +88,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 	}
 
 	// `excluded` can be null, a card, or an array of cards
-	updateSortedCards = (serverCards, excluded?: CardType[]) => {
+	updateSortedCards = (serverCards: CardType[], excluded?: CardType[]) => {
 		const isExcluded = (id) => {
 			if (!excluded) return false;
 			return excluded.some(e => e.id === id);
@@ -139,7 +139,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 				this.scheduled = null;
 				const newSortedCards = this.updateSortedCards(newServerState.currentGame.me.cards, []);
 				console.log(newSortedCards);
-				this.setState({ serverState: newServerState, sortedCards: newSortedCards, cardOnDeck: null });
+				this.setState({ serverState: newServerState, selected: [], sortedCards: newSortedCards, cardOnDeck: null });
 			}
 		};
 		this.source.onerror = (error) => console.log(error);
@@ -150,27 +150,30 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 		this.source?.close();
 	}
 
-	selectCard = (card) => () => {
+	selectCard = (card: CardType) => () => {
 		const newSelection = this.state.selected.concat([card]);
 		const newSortedCards = this.state.sortedCards.filter(c => c.id !== card.id);
 		this.setState({ selected: newSelection, sortedCards: newSortedCards });
 		console.log('Selecting card: ' + card.id);
 	}
 
-	unselectCard = (card) => () => {
+	unselectCard = (card: CardType) => () => {
 		const newSelection = this.state.selected.filter(c => c.id !== card.id);
 		const newSortedCards = this.state.sortedCards.concat([card]);
 		this.setState({ selected: newSelection, sortedCards: newSortedCards });
 		console.log('Unselecting card: ' + card.id);
 	}
 
-	getSelected = (i) => this.state.selected[i]
-	getSortedCards = (i) => this.state.sortedCards[i]
+	updateSelectedOnDrop = (e) => this.setState({ selected: applyDrag(this.state.selected, e) })
+	updateSortedCardsOnDrop = (e) => this.setState({ sortedCards: applyDrag(this.state.sortedCards, e) })
 
-	updateSelectedAfterDraw = (e) => this.setState({ selected: applyDrag(this.state.selected, e) })
-	updateSortedCardsAfterDraw = (e) => this.setState({ sortedCards: applyDrag(this.state.sortedCards, e) })
+	isCurrentPlayerThrow = () => this.isCurrentPlayer() && this.state.serverState.currentGame && this.state.serverState.currentGame.nextAction === 'throw' && this.state.serverState.currentGame.ending == null;
+	isCurrentPlayerDraw = () => this.isCurrentPlayer() && this.state.serverState.currentGame && this.state.serverState.currentGame.nextAction === 'draw' && this.state.serverState.currentGame.ending == null;
 
-	drawFromPile = (card) => {
+	isThrowDisabled = () => !this.isCurrentPlayerThrow() || this.state.selected.length === 0;
+	isYanivDisabled = () => !this.isCurrentPlayerThrow() || this.state.selected.length > 0 || this.state.sortedCards.map(c => c.endValue).reduce((acc, x) => acc + x) > 5;
+
+	drawFromPile = (card: CardType) => {
 		console.log('Drawing from pile: ', card.id);
 		fetch(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/draw`, {
 			method: 'POST',
@@ -297,12 +300,12 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 				{this.isCurrentGame() || this.isPastGame() ? (
 					<div class="table-container">
 						<Pile pile={serverState.currentGame.pile}
-							disabled={!this.isCurrentGame() || !this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'draw'}
+							disabled={!this.isCurrentPlayerDraw()}
 							drawAction={this.drawFromPile}
 						/>
 						<Deck deck={serverState.currentGame.deck}
 							cardOnDeck={cardOnDeck}
-							disabled={!this.isCurrentGame() ||!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'draw'}
+							disabled={!this.isCurrentPlayerDraw()}
 							drawAction={this.drawFromDeck}
 							drawThrowAction={this.drawThrow}
 						/>
@@ -321,43 +324,30 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 								alreadyAccepted={serverState.state.acceptedPlayers && serverState.state.acceptedPlayers.includes(serverState.me)}
 								nextGameAction={this.nextGame}
 							/> : (
-								<div>
-									<button class="btn btn-primary mr-2" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending != null || selected.length === 0} onClick={this.throw}>Throw</button>
-									<button class="btn btn-primary" disabled={!this.isCurrentPlayer() || serverState.currentGame.nextAction !== 'throw' || serverState.currentGame.ending != null || selected.length > 0} onClick={this.yaniv}>Yaniv</button>
-								</div>)}
+								<Actions
+									throwDisabled={this.isThrowDisabled()}
+									throwAction={this.throw}
+									yanivDisabled={this.isYanivDisabled()}
+									yanivAction={this.yaniv}
+								/>)}
 					</div>
 
-					<div id="selected-container" className={`draggable-container py-2 ${this.isCurrentPlayer() && serverState.currentGame && serverState.currentGame.nextAction === 'throw' ? 'active' : 'inactive'}`}>
-						{this.isCurrentPlayer() && serverState.currentGame && serverState.currentGame.nextAction === 'throw' ? (
-							<Container groupName="player-cards" orientation="horizontal" getChildPayload={this.getSelected} onDrop={this.updateSelectedAfterDraw}>
-								{
-									selected.map(c => (
-										<Draggable key={c.id}>
-											<Card
-												card={c}
-												playable={this.isCurrentPlayer() && serverState.currentGame.nextAction === 'throw'}
-												action={this.unselectCard(c)}
-											/>
-										</Draggable>
-									))
-								}
-							</Container>
-						) : <div />}
-					</div>
-					<div id="hand-container" class="draggable-container py-2 border-top">
-						<Container groupName="player-cards" orientation="horizontal" getChildPayload={this.getSortedCards} onDrop={this.updateSortedCardsAfterDraw}>
-							{
-								sortedCards.map(c => (<Draggable key={c.id}>
-									<Card
-										card={c}
-										playable={this.isCurrentPlayer() && serverState.currentGame.nextAction === 'throw'}
-										action={this.selectCard(c)}
-									/>
-								</Draggable>
-								))
-							}
-						</Container>
-					</div>
+					<Hand
+						id='selected-container'
+						active={this.isCurrentPlayerThrow()}
+						inactiveSortingAllowed={false}
+						cards={selected}
+						onDrop={this.updateSelectedOnDrop}
+						cardAction={this.unselectCard} 
+					/>
+					<Hand
+						active={this.isCurrentPlayerThrow()}
+						classes='border-top'
+						inactiveSortingAllowed={true}
+						cards={sortedCards}
+						onDrop={this.updateSortedCardsOnDrop}
+						cardAction={this.selectCard}
+					/>
 				</div>
 			</div>
 			{debug ? (<pre>
