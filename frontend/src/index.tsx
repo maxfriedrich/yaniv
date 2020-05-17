@@ -3,7 +3,7 @@ import Router from 'preact-router';
 
 import 'bootstrap/scss/bootstrap';
 
-import { Join } from './components/join';
+import { Menu } from './components/menu';
 import { Game } from './components/game';
 import { EventSourceTest } from './es';
 
@@ -15,9 +15,9 @@ render(
 			<a class="navbar-brand" href="/">Yaniv</a>
 		</nav>
 		<Router>
-			<Join path="/" />
-			<Join path="/join/:gameId" />
-			<Join path="/join/:gameId/player/:playerId" />
+			<Menu path="/" />
+			<Menu path="/join/:gameId" />
+			<Menu path="/join/:gameId/player/:playerId" />
 			<Game path="/game/:gameId/player/:playerId" />
 			<EventSourceTest path="/es" />
 		</Router>
