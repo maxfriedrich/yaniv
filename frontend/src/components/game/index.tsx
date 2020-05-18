@@ -10,6 +10,7 @@ import {
 
 import { applyDrag } from './drag';
 
+import { Flash, FlashTransitionTimeout } from '../common/flash';
 import { Scores } from './scores';
 import { Pile, Deck } from './table';
 import { Hand } from './hand';
@@ -28,13 +29,17 @@ interface GameComponentStateType {
   sortedCards: CardType[];
   cardOnDeck?: CardType;
   serverState: GameSeriesStateType;
+  flash?: string;
 }
+
+const DeckCardTransitionTimeout = 3000;
 
 export class Game extends Component<
   GameComponentPropsType,
   GameComponentStateType
 > {
-  scheduled?: ReturnType<typeof setTimeout>;
+  deckCardTransition?: ReturnType<typeof setTimeout>;
+  flashTransition?: ReturnType<typeof setTimeout>;
   source?: EventSource;
 
   constructor() {
@@ -42,6 +47,7 @@ export class Game extends Component<
     this.state = {
       selected: [], // sorted
       sortedCards: [],
+      flash: undefined,
       cardOnDeck: undefined,
       serverState: {
         id: 0,
@@ -56,7 +62,6 @@ export class Game extends Component<
         scoresDiff: new Map()
       }
     };
-    this.scheduled = undefined;
   }
 
   isCurrentGame = (): boolean =>
@@ -188,8 +193,8 @@ export class Game extends Component<
         });
       } else {
         console.log('game over');
-        if (this.scheduled) clearTimeout(this.scheduled);
-        this.scheduled = undefined;
+        if (this.deckCardTransition) clearTimeout(this.deckCardTransition);
+        this.deckCardTransition = undefined;
         const newSortedCards = this.updateSortedCards(
           newServerState.currentGame.me.cards,
           []
@@ -207,9 +212,21 @@ export class Game extends Component<
   };
 
   componentWillUnmount = () => {
-    if (this.scheduled) clearTimeout(this.scheduled);
+    if (this.deckCardTransition) clearTimeout(this.deckCardTransition);
     this.source?.close();
   };
+
+  flash = (text: string) => {
+    if (this.flashTransition) clearTimeout(this.flashTransition);
+    this.setState({ flash: text });
+    this.flashTransition = setTimeout(() => this.setState({ flash: undefined }), FlashTransitionTimeout);
+  }
+
+  dismissFlash = () => {
+    if (this.flashTransition) clearTimeout(this.flashTransition);
+    this.setState({ flash: undefined });
+  }
+
 
   selectCard = (card: CardType) => () => {
     const newSelection = this.state.selected.concat([card]);
@@ -243,8 +260,8 @@ export class Game extends Component<
     !this.isCurrentPlayerThrow() || this.state.selected.length === 0;
   isYanivDisabled = () =>
     !this.isCurrentPlayerThrow() ||
-    this.state.selected.length > 0 ||
-    this.state.sortedCards.map(c => c.endValue).reduce((acc, x) => acc + x) > 5;
+    this.state.selected.length > 0 || false
+    // this.state.sortedCards.map(c => c.endValue).reduce((acc, x) => acc + x) > 5;
 
   drawFromPile = (card: CardType) => {
     console.log('Drawing from pile: ', card.id);
@@ -259,7 +276,7 @@ export class Game extends Component<
       .then(response => response.json())
       .then(newServerState => {
         if ('error' in newServerState) {
-          //alert(JSON.stringify(newServerState.error));
+          this.flash(JSON.stringify(newServerState.error));
         } else if (newServerState.state.state === 'gameIsRunning') {
           const newSortedCards = this.updateSortedCards(
             newServerState.currentGame.me.cards,
@@ -290,14 +307,14 @@ export class Game extends Component<
       .then(newServerState => {
         // debugger;
         if ('error' in newServerState) {
-          //alert(JSON.stringify(newServerState.error));
+          this.flash(JSON.stringify(newServerState.error));
         } else {
           this.setState({
             serverState: newServerState,
             cardOnDeck: newServerState.currentGame.me.drawThrowable
           });
-          if (this.scheduled) clearTimeout(this.scheduled);
-          this.scheduled = setTimeout(() => {
+          if (this.deckCardTransition) clearTimeout(this.deckCardTransition);
+          this.deckCardTransition = setTimeout(() => {
             if (this.state.cardOnDeck) {
               console.log('scheduled');
               const newSortedCards = this.updateSortedCards(
@@ -309,7 +326,7 @@ export class Game extends Component<
                 cardOnDeck: undefined
               });
             }
-          }, 3000);
+          }, DeckCardTransitionTimeout);
         }
       })
       .catch(err => console.log(err));
@@ -330,7 +347,7 @@ export class Game extends Component<
       .then(response => response.json())
       .then(newServerState => {
         if ('error' in newServerState) {
-          //alert(JSON.stringify(newServerState.error));
+          this.flash(JSON.stringify(newServerState.error));
         } else {
           this.setState({ serverState: newServerState, selected: [] });
         }
@@ -357,7 +374,7 @@ export class Game extends Component<
       .then(response => response.json())
       .then(newServerState => {
         if ('error' in newServerState) {
-          //alert(JSON.stringify(newServerState.error));
+          this.flash(JSON.stringify(newServerState.error));
         } else {
           this.setState({
             serverState: newServerState,
@@ -381,7 +398,7 @@ export class Game extends Component<
       .then(response => response.json())
       .then(newServerState => {
         if ('error' in newServerState) {
-          //alert(JSON.stringify(newServerState.error));
+          this.flash(JSON.stringify(newServerState.error));
         } else {
           this.setState({ serverState: newServerState, selected: [] });
         }
@@ -400,7 +417,7 @@ export class Game extends Component<
       .then(response => response.json())
       .then(newServerState => {
         if ('error' in newServerState) {
-          //alert(JSON.stringify(newServerState.error));
+          this.flash(JSON.stringify(newServerState.error));
         }
       })
       .catch(err => console.log(err));
@@ -408,9 +425,10 @@ export class Game extends Component<
 
   render = (
     { debug }: GameComponentPropsType,
-    { selected, sortedCards, cardOnDeck, serverState }: GameComponentStateType
+    { selected, sortedCards, cardOnDeck, serverState, flash }: GameComponentStateType
   ) => (
     <div class="game">
+      <Flash text={flash} dismissAction={this.dismissFlash} />
       <Scores
         players={this.playerInfo()}
         showScoreDiff={
