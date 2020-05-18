@@ -26,6 +26,11 @@ const renderScoreDiff = (scores?: number[]) => {
   return rendered.length > 0 ? rendered.join(' ') : '';
 };
 
+const playersStartingWithMe = (players: ExtendedPlayerInfoType[]): ExtendedPlayerInfoType[] => {
+  const meIndex = players.findIndex(p => p.isMe);
+  return players.slice(meIndex).concat(players.slice(0, meIndex));
+}
+
 const basicClasses =
   'list-group-item py-2 d-flex justify-content-between align-items-middle';
 const activeClass = 'active';
@@ -44,7 +49,7 @@ export interface ScoresProps {
 export const Scores = ({ players, showScoreDiff }: ScoresProps) => (
   <div class="card my-2">
     <ul class="list-group">
-      {players.map(player => (
+      {playersStartingWithMe(players).map(player => (
         <li className={listGroupClasses(player.isCurrentPlayer)}>
           <div class="d-flex flex-column justify-content-center">
             <div>
