@@ -1,6 +1,7 @@
 import { h, Component } from 'preact';
 import { route } from 'preact-router';
 
+import { Flash, FlashTransitionTimeout } from '../common/flash';
 import { Join } from './join';
 import { Waiting } from './waiting';
 
@@ -9,7 +10,8 @@ export class Menu extends Component {
     super();
     this.state = {
       players: [],
-      name: ''
+      name: '',
+      flash: undefined
     };
   }
 
@@ -23,7 +25,7 @@ export class Menu extends Component {
         console.log('got initial server state:', initialServerState);
         this.setState({ players: initialServerState.players });
       })
-      .catch(err => console.log(err));
+      .catch(err => this.flash(err));
   };
 
   setupPreStartStream = () => {
@@ -66,19 +68,30 @@ export class Menu extends Component {
   };
 
   componentDidMount = () => {
-    console.log('component did mount');
     this.getGameInfo();
     if (!this.setupStream()) this.setupPreStartStream();
   };
 
   componentWillUnmount = () => {
-    console.log('component will unmount');
     this.source?.close();
+  };
+
+  flash = text => {
+    if (this.flashTransition) clearTimeout(this.flashTransition);
+    this.setState({ flash: text });
+    this.flashTransition = setTimeout(
+      () => this.setState({ flash: undefined }),
+      FlashTransitionTimeout
+    );
+  };
+
+  dismissFlash = () => {
+    if (this.flashTransition) clearTimeout(this.flashTransition);
+    this.setState({ flash: undefined });
   };
 
   createGame = e => {
     e.preventDefault();
-    console.log('Creating game...');
     fetch('/rest/game/new', {
       method: 'POST'
     })
@@ -86,7 +99,7 @@ export class Menu extends Component {
       .then(data => {
         console.log(data);
         if ('error' in data) {
-          //alert(JSON.stringify(data.error));
+          this.flash(JSON.stringify(data.error));
         } else {
           const gameId = data.id;
           this.props.gameId = gameId;
@@ -100,7 +113,7 @@ export class Menu extends Component {
             .then(data => {
               console.log(data);
               if ('error' in data) {
-                //alert(JSON.stringify(data.error));
+                this.flash(JSON.stringify(data.error));
               } else {
                 const playerId = data.id;
                 console.log('Got player id:', playerId);
@@ -110,10 +123,10 @@ export class Menu extends Component {
                 route(`/join/${gameId}/player/${playerId}`);
               }
             })
-            .catch(err => console.log(err));
+            .catch(err => this.flash(err));
         }
       })
-      .catch(err => console.log(err));
+      .catch(err => this.flash(err));
   };
 
   joinGame = e => {
@@ -128,7 +141,7 @@ export class Menu extends Component {
       .then(data => {
         console.log(data);
         if ('error' in data) {
-          //alert(JSON.stringify(data.error));
+          this.flash(data.error);
         } else {
           const playerId = data.id;
           console.log('Got player id:', playerId);
@@ -138,7 +151,7 @@ export class Menu extends Component {
           route(`/join/${this.props.gameId}/player/${playerId}`);
         }
       })
-      .catch(err => console.log(err));
+      .catch(err => this.flash(err));
   };
 
   startGame = e => {
@@ -150,12 +163,12 @@ export class Menu extends Component {
       .then(response => response.json())
       .then(data => {
         if ('error' in data) {
-          //alert(JSON.stringify(data.error));
+          this.flash(data.error);
         }
         console.log('got create game response:', data);
         route(`/game/${this.props.gameId}/player/${this.props.playerId}`);
       })
-      .catch(err => console.log(err));
+      .catch(err => this.flash(err));
   };
 
   joinLink = () =>
@@ -173,15 +186,15 @@ export class Menu extends Component {
       .then(response => response.json())
       .then(data => {
         if ('error' in data) {
-          //alert(JSON.stringify(data.error));
+          this.flash(data.error);
         }
-        console.log('got ok response:', data);
       })
-      .catch(err => console.log(err));
+      .catch(err => this.flash(err));
   };
 
-  render = ({ gameId, playerId, debug }, { players, name }) => (
+  render = ({ gameId, playerId, debug }, { players, name, flash }) => (
     <div>
+      <Flash text={flash} dismissAction={this.dismissFlash} />
       {gameId ? (
         playerId ? (
           <Waiting

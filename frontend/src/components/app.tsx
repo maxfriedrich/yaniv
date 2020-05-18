@@ -1,4 +1,4 @@
-import { h, render } from 'preact';
+import { h } from 'preact';
 import Router from 'preact-router';
 
 import 'bootstrap/scss/bootstrap';
