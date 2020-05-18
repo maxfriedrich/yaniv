@@ -48,7 +48,7 @@ export interface ScoresProps {
 
 export const Scores = ({ players, showScoreDiff }: ScoresProps) => (
   <div class="card my-2">
-    <ul class="list-group">
+    <ul class="list-group list-group-flush">
       {playersStartingWithMe(players).map(player => (
         <li className={listGroupClasses(player.isCurrentPlayer)}>
           <div class="d-flex flex-column justify-content-center">
@@ -71,15 +71,15 @@ export const Scores = ({ players, showScoreDiff }: ScoresProps) => (
               ))}
             </div>
           </div>
-          <div class="player-score d-flex flex-column justify-content-center">
-            <div>{player.score}</div>
+          <div className={`player-score ml-1 d-flex justify-content-end align-items-center ${showScoreDiff ? 'font-weight-bold' : ''}`}>
             {showScoreDiff && !player.scoreDiff?.includes(0) ? (
-              <div class="player-score-diff small text-muted">
+              <span class="player-score-diff mr-2 small text-muted">
                 {renderScoreDiff(player.scoreDiff)}
-              </div>
+              </span>
             ) : (
               <Fragment />
             )}
+            <span>{player.score}</span>
           </div>
         </li>
       ))}
