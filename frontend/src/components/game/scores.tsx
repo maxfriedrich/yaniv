@@ -1,4 +1,4 @@
-import { h } from 'preact';
+import { h, Fragment } from 'preact';
 
 import { CardType, ExtendedPlayerInfoType } from './api';
 
@@ -57,7 +57,7 @@ export const Scores = ({ players, showScoreDiff }: ScoresProps) => (
                   &nbsp;
                 </span>
               ) : (
-                <span />
+                <Fragment />
               )}
               {cardsStrings(player.cards).map(card => (
                 <span>
@@ -73,7 +73,7 @@ export const Scores = ({ players, showScoreDiff }: ScoresProps) => (
                 {renderScoreDiff(player.scoreDiff!)}
               </div>
             ) : (
-              <div />
+              <Fragment />
             )}
           </div>
         </li>
