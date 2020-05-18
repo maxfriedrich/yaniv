@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "preact build --no-prerender --no-inline-css --dest ../public/frontend",
+    "build": "preact build --no-prerender --dest ../public/frontend",
     "serve": "sirv start ../public/frontend --cors --single",
     "dev": "preact watch",
     "lint": "eslint src/**/*.{js,ts,tsx}",
