@@ -25,6 +25,7 @@ module.exports = {
 		'react/no-unknown-property': ['error', { ignore: ['class'] }],
 		'react/jsx-key': 0,
 		'no-console': 2,
+		'no-alert': 2
   },
   settings: {
     react: {
