@@ -15,20 +15,39 @@ export interface HandProps {
   cardAction: (card: CardType) => () => void;
 }
 
-const getChildPayload = (cards: CardType[]) => (i: number): CardType => cards[i];
+const getChildPayload = (cards: CardType[]) => (i: number): CardType =>
+  cards[i];
 
-export const Hand = ({id, active, classes, inactiveSortingAllowed, cards, onDrop, cardAction}: HandProps) => (
-	<div id={id} className={`draggable-container py-2 ${active ? 'active' : 'inactive'} ${classes}`}>
-		{active || inactiveSortingAllowed ? (
-			<Container groupName="player-cards" orientation="horizontal" getChildPayload={getChildPayload(cards)} onDrop={onDrop}>
-				{
-					cards.map(c => (
-						<Draggable key={c.id}>
-							<Card card={c} playable={active} action={cardAction(c)} />
-						</Draggable>
-					))
-				}
-			</Container>
-		) : <div />}
-	</div>
-)
+export const Hand = ({
+  id,
+  active,
+  classes,
+  inactiveSortingAllowed,
+  cards,
+  onDrop,
+  cardAction
+}: HandProps) => (
+  <div
+    id={id}
+    className={`draggable-container py-2 ${
+      active ? 'active' : 'inactive'
+    } ${classes}`}
+  >
+    {active || inactiveSortingAllowed ? (
+      <Container
+        groupName="player-cards"
+        orientation="horizontal"
+        getChildPayload={getChildPayload(cards)}
+        onDrop={onDrop}
+      >
+        {cards.map(c => (
+          <Draggable key={c.id}>
+            <Card card={c} playable={active} action={cardAction(c)} />
+          </Draggable>
+        ))}
+      </Container>
+    ) : (
+      <div />
+    )}
+  </div>
+);
