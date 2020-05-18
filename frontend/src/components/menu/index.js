@@ -81,7 +81,7 @@ export class Menu extends Component {
 			.then((data) => {
 				console.log(data);
 				if ('error' in data) {
-					alert(JSON.stringify(data.error));
+					//alert(JSON.stringify(data.error));
 				}
 				else {
 					const gameId = data.id;
@@ -96,7 +96,7 @@ export class Menu extends Component {
 						.then((data) => {
 							console.log(data);
 							if ('error' in data) {
-								alert(JSON.stringify(data.error));
+								//alert(JSON.stringify(data.error));
 							}
 							else {
 								const playerId = data.id;
@@ -125,7 +125,7 @@ export class Menu extends Component {
 			.then((data) => {
 				console.log(data);
 				if ('error' in data) {
-					alert(JSON.stringify(data.error));
+					//alert(JSON.stringify(data.error));
 				}
 				else {
 					const playerId = data.id;
@@ -148,7 +148,7 @@ export class Menu extends Component {
 			.then(response => response.json())
 			.then((data) => {
 				if ('error' in data) {
-					alert(JSON.stringify(data.error));
+					//alert(JSON.stringify(data.error));
 				}
 				console.log('got create game response:', data);
 				route(`/game/${this.props.gameId}/player/${this.props.playerId}`);
@@ -156,7 +156,7 @@ export class Menu extends Component {
 			.catch(err => console.log(err));
 	}
 
-	joinLink = () => `${window.location.origin}/join/${this.props.gameId}`
+	joinLink = () => `${window !== undefined ? window.location.origin : null}/join/${this.props.gameId}`
 
 	updateName = (e) => this.setState({ name: e.target.value })
 
@@ -168,7 +168,7 @@ export class Menu extends Component {
 			.then(response => response.json())
 			.then((data) => {
 				if ('error' in data) {
-					alert(JSON.stringify(data.error));
+					//alert(JSON.stringify(data.error));
 				}
 				console.log('got ok response:', data);
 			})

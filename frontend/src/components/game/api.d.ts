@@ -33,7 +33,7 @@ export type PartialPlayerCardsViewType = PlayerCardsViewType
 
 export interface GameStateType {
   me: PlayerCardsType;
-  otherPlayers: PartialPlayerCardsViewType[] |FullPlayerCardsViewType[];
+  otherPlayers: PartialPlayerCardsViewType[] | FullPlayerCardsViewType[];
   currentPlayer: string;
   nextAction: 'draw' | 'throw';
   pile: PileType;
@@ -52,10 +52,15 @@ export interface GameSeriesStateType {
   scoresDiff: Map<string, number[]>;
 }
 
+// TODO: this is actually multiple types
 export interface SeriesStateType { 
   state: 'gameIsRunning' | 'waitingForNextGame' | 'waitingForSeriesStart' | 'gameOver';
-  winner?: string; 
+  winner?: string;
   acceptedPlayers?: string[];
 }
+
+
 export interface GameResultType { ending: EndingType; points: Map<string, number> }
+
+// TODO: this is actually multiple types
 export interface EndingType { type: 'yaniv' | 'asaf' | 'empty'; winner; points; caller?; winnerPoints? }

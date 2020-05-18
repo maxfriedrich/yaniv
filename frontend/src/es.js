@@ -8,7 +8,6 @@ export class EventSourceTest extends Component {
 	componentDidMount = () => {
 		this.source = new EventSource(`/rest/test-stream`);
 		this.source.onmessage = (event) => {
-			console.log(event);
 			this.setState(event);
 		};
 		this.source.onerror = (error) => {this.setState(error);};

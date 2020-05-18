@@ -1,6 +1,6 @@
 import { h, Component } from 'preact';
 
-import { CardType, GameSeriesStateType, FullPlayerCardsViewType, PartialPlayerCardsViewType } from './api';
+import { CardType, GameSeriesStateType, FullPlayerCardsViewType, PartialPlayerCardsViewType, ExtendedPlayerInfoType } from './api';
 
 import { applyDrag } from './drag';
 
@@ -28,7 +28,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 		this.state = {
 			selected: [], // sorted
 			sortedCards: [],
-			cardOnDeck: null,
+			cardOnDeck: undefined,
 			serverState: {
 				id: 0,
 				version: 0,
@@ -37,50 +37,50 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 				state: {
 					state: 'waitingForSeriesStart'
 				},
-				currentGame: null,
+				currentGame: undefined,
 				scores: new Map(),
 				scoresDiff: new Map()
 			}
 		};
-		this.scheduled = null;
+		this.scheduled = undefined;
 	}
 
-	isCurrentGame = () => this.state.serverState.state.state === 'gameIsRunning';
+	isCurrentGame = (): boolean => this.state.serverState.state.state === 'gameIsRunning';
 
-	isPastGame = () => this.state.serverState.state.state === 'waitingForNextGame' || this.state.serverState.state.state === 'gameOver';
+	isPastGame = (): boolean => this.state.serverState.state.state === 'waitingForNextGame' || this.state.serverState.state.state === 'gameOver';
 
-	isCurrentPlayer = () => this.isCurrentGame() && this.state.serverState.currentGame.currentPlayer === this.state.serverState.me;
+	isCurrentPlayer = (): boolean => this.isCurrentGame() && this.state.serverState.currentGame?.currentPlayer === this.state.serverState.me;
 
-	myName = () => this.state.serverState.players.find(p => p.id === this.state.serverState.me).name;
+	myName = (): string => this.state.serverState.players.find(p => p.id === this.state.serverState.me)?.name || '';
 
-	playerCards = (playerId: string): CardType[] | number => {
+	playerCards = (playerId: string): CardType[] | number | undefined => {
 		if (!this.isCurrentGame() && !this.isPastGame()) {
-			return null;
+			return undefined;
 		}
 		if (playerId === this.state.serverState.me) {
-			const myCards = this.state.serverState.currentGame.me.cards;
-			return this.isPastGame() ? myCards : myCards.length;
+			const myCards = this.state.serverState.currentGame?.me.cards;
+			return this.isPastGame() ? myCards : myCards?.length;
 		}
-		const otherPlayers = this.state.serverState.currentGame.otherPlayers;
+		const otherPlayers = this.state.serverState.currentGame?.otherPlayers;
 		console.log('otherplayers:', otherPlayers);
-		if (otherPlayers.length === 0) {
-			return null;
+		if (otherPlayers?.length === 0) {
+			return undefined;
 		}
 		
 		// TODO: this is not nice but I don't know any better
-		return 'cards' in otherPlayers[0] ?
-			(otherPlayers as FullPlayerCardsViewType[]).find(p => p.id === playerId).cards :
-			(otherPlayers as PartialPlayerCardsViewType[]).find(p => p.id === playerId).numCards;
+		return 'cards' in otherPlayers![0] ?
+			(otherPlayers as FullPlayerCardsViewType[]).find(p => p.id === playerId)?.cards :
+			(otherPlayers as PartialPlayerCardsViewType[]).find(p => p.id === playerId)?.numCards;
 	}
 
-	playerInfo = () => {
+	playerInfo = (): ExtendedPlayerInfoType[] => {
 		if (!this.state.serverState.players) return [];
 		return this.state.serverState.players.map(player => (
 			{
 				name: player.name,
 				isMe: player.id === this.state.serverState.me,
-				isCurrentPlayer: this.isCurrentGame() && player.id === this.state.serverState.currentGame.currentPlayer,
-				cards: this.playerCards(player.id),
+				isCurrentPlayer: this.isCurrentGame() && player.id === this.state.serverState.currentGame?.currentPlayer,
+				cards: this.playerCards(player.id) || [],
 				score: this.state.serverState.scores[player.id],
 				scoreDiff: this.state.serverState.scoresDiff[player.id]
 			}
@@ -131,15 +131,15 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 					const excluded = this.state.selected.concat(newServerState.currentGame.me.drawThrowable || []);
 					newSortedCards = this.updateSortedCards(newServerState.currentGame.me.cards, excluded);
 				}
-				this.setState({ serverState: newServerState, sortedCards: newSortedCards, cardOnDeck: null });
+				this.setState({ serverState: newServerState, sortedCards: newSortedCards, cardOnDeck: undefined });
 			}
 			else {
 				console.log('game over');
-				clearTimeout(this.scheduled);
-				this.scheduled = null;
+				if (this.scheduled) clearTimeout(this.scheduled);
+				this.scheduled = undefined;
 				const newSortedCards = this.updateSortedCards(newServerState.currentGame.me.cards, []);
 				console.log(newSortedCards);
-				this.setState({ serverState: newServerState, selected: [], sortedCards: newSortedCards, cardOnDeck: null });
+				this.setState({ serverState: newServerState, selected: [], sortedCards: newSortedCards, cardOnDeck: undefined });
 			}
 		};
 		this.source.onerror = (error) => console.log(error);
@@ -167,8 +167,8 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 	updateSelectedOnDrop = (e) => this.setState({ selected: applyDrag(this.state.selected, e) })
 	updateSortedCardsOnDrop = (e) => this.setState({ sortedCards: applyDrag(this.state.sortedCards, e) })
 
-	isCurrentPlayerThrow = () => this.isCurrentPlayer() && this.state.serverState.currentGame && this.state.serverState.currentGame.nextAction === 'throw' && this.state.serverState.currentGame.ending == null;
-	isCurrentPlayerDraw = () => this.isCurrentPlayer() && this.state.serverState.currentGame && this.state.serverState.currentGame.nextAction === 'draw' && this.state.serverState.currentGame.ending == null;
+	isCurrentPlayerThrow = (): boolean => this.isCurrentPlayer() && this.state.serverState.currentGame?.nextAction === 'throw' && this.state.serverState.currentGame.ending == null;
+	isCurrentPlayerDraw = (): boolean => this.isCurrentPlayer() && this.state.serverState.currentGame?.nextAction === 'draw' && this.state.serverState.currentGame.ending == null;
 
 	isThrowDisabled = () => !this.isCurrentPlayerThrow() || this.state.selected.length === 0;
 	isYanivDisabled = () => !this.isCurrentPlayerThrow() || this.state.selected.length > 0 || this.state.sortedCards.map(c => c.endValue).reduce((acc, x) => acc + x) > 5;
@@ -183,7 +183,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 			.then((response) => response.json())
 			.then((newServerState) => {
 				if ('error' in newServerState) {
-					alert(JSON.stringify(newServerState.error));
+					//alert(JSON.stringify(newServerState.error));
 				}
 				else if (newServerState.state.state === 'gameIsRunning') {
 					const newSortedCards = this.updateSortedCards(newServerState.currentGame.me.cards, newServerState.currentGame.me.drawThrowable);
@@ -206,16 +206,16 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 			.then((newServerState) => {
 				// debugger;
 				if ('error' in newServerState) {
-					alert(JSON.stringify(newServerState.error));
+					//alert(JSON.stringify(newServerState.error));
 				}
 				else {
 					this.setState({ serverState: newServerState, cardOnDeck: newServerState.currentGame.me.drawThrowable });
-					clearTimeout(this.scheduled);
+					if (this.scheduled) clearTimeout(this.scheduled);
 					this.scheduled = setTimeout(() => {
 						if (this.state.cardOnDeck) {
 							console.log('scheduled');
 							const newSortedCards = this.updateSortedCards(newServerState.currentGame.me.cards, []);
-							this.setState({ sortedCards: newSortedCards, cardOnDeck: null });
+							this.setState({ sortedCards: newSortedCards, cardOnDeck: undefined });
 						}
 					}, 3000);
 				}
@@ -234,7 +234,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 			.then((response) => response.json())
 			.then((newServerState) => {
 				if ('error' in newServerState) {
-					alert(JSON.stringify(newServerState.error));
+					//alert(JSON.stringify(newServerState.error));
 				}
 				else {
 					this.setState({ serverState: newServerState, selected: [] });
@@ -244,19 +244,19 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 
 	drawThrow = () => {
 		console.log(this.state);
-		console.log('Draw-throwing card: ' + this.state.serverState.currentGame.me.drawThrowable.id);
+		console.log('Draw-throwing card: ' + this.state.serverState.currentGame?.me.drawThrowable?.id);
 		fetch(`/rest/game/${this.props.gameId}/player/${this.props.playerId}/drawThrow`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ card: this.state.serverState.currentGame.me.drawThrowable.id })
+			body: JSON.stringify({ card: this.state.serverState.currentGame?.me.drawThrowable?.id })
 		})
 			.then((response) => response.json())
 			.then((newServerState) => {
 				if ('error' in newServerState) {
-					alert(JSON.stringify(newServerState.error));
+					//alert(JSON.stringify(newServerState.error));
 				}
 				else {
-					this.setState({ serverState: newServerState, cardOnDeck: null, selected: [] });
+					this.setState({ serverState: newServerState, cardOnDeck: undefined, selected: [] });
 				}
 			}).catch(err => console.log(err));
 	}
@@ -271,7 +271,7 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 			.then((response) => response.json())
 			.then((newServerState) => {
 				if ('error' in newServerState) {
-					alert(JSON.stringify(newServerState.error));
+					//alert(JSON.stringify(newServerState.error));
 				}
 				else {
 					this.setState({ serverState: newServerState, selected: [] });
@@ -287,23 +287,23 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 			.then((response) => response.json())
 			.then((newServerState) => {
 				if ('error' in newServerState) {
-					alert(JSON.stringify(newServerState.error));
+					//alert(JSON.stringify(newServerState.error));
 				}
 			}).catch(err => console.log(err));
 	}
 
 	render = ({ debug }: GameComponentPropsType, { selected, sortedCards, cardOnDeck, serverState }: GameComponentStateType) => (
 		<div class="game">
-			<Scores players={this.playerInfo()} showScoreDiff={serverState && (serverState.state.state === 'waitingForNextGame' || serverState.state.state === 'gameOver')} />
+			<Scores players={this.playerInfo()} showScoreDiff={serverState.state.state === 'waitingForNextGame' || serverState.state.state === 'gameOver'} />
 
 			<div class="card bg-light my-2">
 				{this.isCurrentGame() || this.isPastGame() ? (
 					<div class="table-container">
-						<Pile pile={serverState.currentGame.pile}
+						<Pile pile={serverState.currentGame!.pile}
 							disabled={!this.isCurrentPlayerDraw()}
 							drawAction={this.drawFromPile}
 						/>
-						<Deck deck={serverState.currentGame.deck}
+						<Deck deck={serverState.currentGame!.deck}
 							cardOnDeck={cardOnDeck}
 							disabled={!this.isCurrentPlayerDraw()}
 							drawAction={this.drawFromDeck}
@@ -316,12 +316,12 @@ export class Game extends Component<GameComponentPropsType, GameComponentStateTy
 			<div class="card my=2">
 				<div class="hand-container">
 					<div class="card-header">
-						{(serverState.currentGame && serverState.currentGame.ending) ?
+						{(serverState.currentGame?.ending) ?
 							<NextGameControls
 								players={serverState.players}
 								currentGame={serverState.currentGame}
 								seriesState={serverState.state}
-								alreadyAccepted={serverState.state.acceptedPlayers && serverState.state.acceptedPlayers.includes(serverState.me)}
+								alreadyAccepted={serverState.state.acceptedPlayers?.includes(serverState.me) || false}
 								nextGameAction={this.nextGame}
 							/> : (
 								<Actions

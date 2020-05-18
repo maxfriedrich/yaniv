@@ -47,7 +47,7 @@ export const Scores = ({ players, showScoreDiff }: ScoresProps) => (
 					</div></div>
 					<div class="player-score d-flex flex-column justify-content-center">
 						<div>{player.score}</div>
-						{(showScoreDiff && (player.scoreDiff || player.scoreDiff.includes(0))) ? <div class="player-score-diff small text-muted">{renderScoreDiff(player.scoreDiff)}</div> : <div />}
+						{(showScoreDiff && !player.scoreDiff?.includes(0)) ? <div class="player-score-diff small text-muted">{renderScoreDiff(player.scoreDiff!)}</div> : <div />}
 					</div>
 				</li>
 			)

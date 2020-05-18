@@ -20,7 +20,8 @@ module.exports = {
   rules: {
     "react/no-unknown-property": ["error", { ignore: ["class"] }],
     "react/jsx-key": "off",
-    "indent": ["error", "tab"]
+    "indent": ["error", "tab"],
+    "eol-last": ["error", "always"],
   },
   settings: {
     react: {

@@ -10,7 +10,7 @@ const color = (card: CardType) => {
 
 const renderString = (card: CardType) => <span>{card.gameRepresentation[0]}<wbr />{card.gameRepresentation[1]}</span>;
 
-const wrappedAction = (playable: boolean, action: () => void) => playable ? action : null;
+const wrappedAction = (playable: boolean, action: () => void) => playable ? action : undefined;
 
 export interface CardProps { 
 	card?: CardType;
@@ -26,7 +26,7 @@ export const Card = ({ card, classes, playable, backside, action }: CardProps) =
 	return (
 		<div className={`game-card ${playableClass} ${backsideClass} ${card ? color(card) : ''} ${classes}`}
 			disabled={!playable}
-			onClick={wrappedAction(playable, action)}
+			onClick={wrappedAction(playable, action || (() => undefined)) }
 		>
 			{card ? renderString(card) : ''}
 		</div>
