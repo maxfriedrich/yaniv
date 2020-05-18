@@ -7,7 +7,7 @@ const drawCard = (drawAction: (card: CardType) => void, card: CardType) => () =>
   drawAction(card);
 
 export interface PileProps {
-  pile: PileType;
+  pile?: PileType;
   disabled: boolean;
   drawAction: (card: CardType) => void;
 }
@@ -15,12 +15,12 @@ export interface PileProps {
 export const Pile = ({ pile, disabled, drawAction }: PileProps) => (
   <div class="pile-container">
     <div class="top-container">
-      {pile.top.map(card => (
+      {pile?.top.map(card => (
         <Card card={card} playable={false} classes="pile-card" />
       ))}
     </div>
     <div class="drawable-container">
-      {pile.drawable.map(pileCard => (
+      {pile?.drawable.map(pileCard => (
         <Card
           card={pileCard.card}
           playable={!disabled && pileCard.drawable}
@@ -29,7 +29,7 @@ export const Pile = ({ pile, disabled, drawAction }: PileProps) => (
         />
       ))}
     </div>
-    {pile.bottom > 0 ? (
+    {pile?.bottom || 0 > 0 ? (
       <Card playable={false} backside classes="pile-card pile-bottom" />
     ) : (
       <div />
@@ -46,7 +46,6 @@ export interface DeckProps {
 }
 
 export const Deck = ({
-  deck,
   cardOnDeck,
   disabled,
   drawAction,

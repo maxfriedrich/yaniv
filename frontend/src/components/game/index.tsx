@@ -219,14 +219,16 @@ export class Game extends Component<
   flash = (text: string) => {
     if (this.flashTransition) clearTimeout(this.flashTransition);
     this.setState({ flash: text });
-    this.flashTransition = setTimeout(() => this.setState({ flash: undefined }), FlashTransitionTimeout);
-  }
+    this.flashTransition = setTimeout(
+      () => this.setState({ flash: undefined }),
+      FlashTransitionTimeout
+    );
+  };
 
   dismissFlash = () => {
     if (this.flashTransition) clearTimeout(this.flashTransition);
     this.setState({ flash: undefined });
-  }
-
+  };
 
   selectCard = (card: CardType) => () => {
     const newSelection = this.state.selected.concat([card]);
@@ -259,9 +261,8 @@ export class Game extends Component<
   isThrowDisabled = () =>
     !this.isCurrentPlayerThrow() || this.state.selected.length === 0;
   isYanivDisabled = () =>
-    !this.isCurrentPlayerThrow() ||
-    this.state.selected.length > 0 || false
-    // this.state.sortedCards.map(c => c.endValue).reduce((acc, x) => acc + x) > 5;
+    !this.isCurrentPlayerThrow() || this.state.selected.length > 0 || false;
+  // this.state.sortedCards.map(c => c.endValue).reduce((acc, x) => acc + x) > 5;
 
   drawFromPile = (card: CardType) => {
     console.log('Drawing from pile: ', card.id);
@@ -276,7 +277,7 @@ export class Game extends Component<
       .then(response => response.json())
       .then(newServerState => {
         if ('error' in newServerState) {
-          this.flash(JSON.stringify(newServerState.error));
+          this.flash(newServerState.error);
         } else if (newServerState.state.state === 'gameIsRunning') {
           const newSortedCards = this.updateSortedCards(
             newServerState.currentGame.me.cards,
@@ -290,7 +291,7 @@ export class Game extends Component<
           this.setState({ serverState: newServerState });
         }
       })
-      .catch(err => console.log(err));
+      .catch(err => this.flash(err));
   };
 
   drawFromDeck = () => {
@@ -307,7 +308,7 @@ export class Game extends Component<
       .then(newServerState => {
         // debugger;
         if ('error' in newServerState) {
-          this.flash(JSON.stringify(newServerState.error));
+          this.flash(newServerState.error);
         } else {
           this.setState({
             serverState: newServerState,
@@ -329,7 +330,7 @@ export class Game extends Component<
           }, DeckCardTransitionTimeout);
         }
       })
-      .catch(err => console.log(err));
+      .catch(err => this.flash(err));
   };
 
   throw = () => {
@@ -347,12 +348,12 @@ export class Game extends Component<
       .then(response => response.json())
       .then(newServerState => {
         if ('error' in newServerState) {
-          this.flash(JSON.stringify(newServerState.error));
+          this.flash(newServerState.error);
         } else {
           this.setState({ serverState: newServerState, selected: [] });
         }
       })
-      .catch(err => console.log(err));
+      .catch(err => this.flash(err));
   };
 
   drawThrow = () => {
@@ -374,7 +375,7 @@ export class Game extends Component<
       .then(response => response.json())
       .then(newServerState => {
         if ('error' in newServerState) {
-          this.flash(JSON.stringify(newServerState.error));
+          this.flash(newServerState.error);
         } else {
           this.setState({
             serverState: newServerState,
@@ -383,7 +384,7 @@ export class Game extends Component<
           });
         }
       })
-      .catch(err => console.log(err));
+      .catch(err => this.flash(err));
   };
 
   yaniv = () => {
@@ -398,12 +399,12 @@ export class Game extends Component<
       .then(response => response.json())
       .then(newServerState => {
         if ('error' in newServerState) {
-          this.flash(JSON.stringify(newServerState.error));
+          this.flash(newServerState.error);
         } else {
           this.setState({ serverState: newServerState, selected: [] });
         }
       })
-      .catch(err => console.log(err));
+      .catch(err => this.flash(err));
   };
 
   nextGame = () => {
@@ -417,15 +418,21 @@ export class Game extends Component<
       .then(response => response.json())
       .then(newServerState => {
         if ('error' in newServerState) {
-          this.flash(JSON.stringify(newServerState.error));
+          this.flash(newServerState.error);
         }
       })
-      .catch(err => console.log(err));
+      .catch(err => this.flash(err));
   };
 
   render = (
     { debug }: GameComponentPropsType,
-    { selected, sortedCards, cardOnDeck, serverState, flash }: GameComponentStateType
+    {
+      selected,
+      sortedCards,
+      cardOnDeck,
+      serverState,
+      flash
+    }: GameComponentStateType
   ) => (
     <div class="game">
       <Flash text={flash} dismissAction={this.dismissFlash} />
@@ -441,12 +448,12 @@ export class Game extends Component<
         {this.isCurrentGame() || this.isPastGame() ? (
           <div class="table-container">
             <Pile
-              pile={serverState.currentGame!.pile}
+              pile={serverState.currentGame?.pile}
               disabled={!this.isCurrentPlayerDraw()}
               drawAction={this.drawFromPile}
             />
             <Deck
-              deck={serverState.currentGame!.deck}
+              deck={serverState.currentGame?.deck}
               cardOnDeck={cardOnDeck}
               disabled={!this.isCurrentPlayerDraw()}
               drawAction={this.drawFromDeck}

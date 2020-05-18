@@ -14,9 +14,9 @@ const cardsStrings = (cards?: CardType[] | number): string[] => {
     .map(c => c.gameRepresentation.join(''));
 };
 
-const renderScoreDiff = (scores: number[]) => {
+const renderScoreDiff = (scores?: number[]) => {
   const rendered: string[] = [];
-  scores.map(score => {
+  scores?.map(score => {
     if (score > 0) {
       rendered.push(`+${score}`);
     } else if (score < 0) {
@@ -70,7 +70,7 @@ export const Scores = ({ players, showScoreDiff }: ScoresProps) => (
             <div>{player.score}</div>
             {showScoreDiff && !player.scoreDiff?.includes(0) ? (
               <div class="player-score-diff small text-muted">
-                {renderScoreDiff(player.scoreDiff!)}
+                {renderScoreDiff(player.scoreDiff)}
               </div>
             ) : (
               <Fragment />
