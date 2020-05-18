@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "yaniv-frontend",
+  "name": "yaniv",
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
@@ -10,21 +10,32 @@
     "lint": "eslint src/**/*.{js,ts,tsx}",
     "fix": "eslint src/**/*.{js,ts,tsx} --fix"
   },
-  "eslintConfig": {
-    "extends": "eslint-config-synacor"
-  },
   "eslintIgnore": [
     "build/*"
   ],
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{css,md,scss}": "prettier --write",
+    "*.{js,jsx,ts,tsx}": "eslint --fix"
+  },
   "devDependencies": {
     "@types/react": "^16.9.35",
     "@typescript-eslint/eslint-plugin": "^2.33.0",
     "@typescript-eslint/parser": "^2.33.0",
     "css-loader": "^3.5.3",
-    "eslint": "^6.0.1",
-    "eslint-config-synacor": "^3.0.4",
+    "eslint": "^6.8.0",
+    "eslint-plugin-react": "^7.19.0",
+    "eslint-plugin-react-hooks": "^3.0.0",
     "node-sass": "^4.14.1",
-    "preact-cli": "^3.0.0-rc.6",
+    "preact-cli": "^3.0.0-rc.9",
+    "eslint-config-prettier": "^6.10.1",
+    "eslint-plugin-prettier": "^3.1.2",
+    "husky": "^4.2.1",
+    "prettier": "^1.19.1",
     "sass-loader": "^8.0.2",
     "sirv-cli": "^0.4.5",
     "ts-loader": "^6.2.2",

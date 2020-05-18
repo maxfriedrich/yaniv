@@ -1,9 +1,23 @@
-export interface CardType { id: string; gameRepresentation: string[]; endValue: number }
-export interface DrawableCardType { card: CardType; drawable: boolean }
+export interface CardType {
+  id: string;
+  gameRepresentation: string[];
+  endValue: number;
+}
+export interface DrawableCardType {
+  card: CardType;
+  drawable: boolean;
+}
 
-export interface PileType { top: CardType[]; drawable: DrawableCardType[]; bottom: number }
+export interface PileType {
+  top: CardType[];
+  drawable: DrawableCardType[];
+  bottom: number;
+}
 
-export interface PlayerInfoType { id: string; name: string }
+export interface PlayerInfoType {
+  id: string;
+  name: string;
+}
 
 export interface ExtendedPlayerInfoType {
   name: string;
@@ -29,7 +43,7 @@ export interface FullPlayerCardsViewType extends PlayerCardsViewType {
   cards: CardType[];
 }
 
-export type PartialPlayerCardsViewType = PlayerCardsViewType
+export type PartialPlayerCardsViewType = PlayerCardsViewType;
 
 export interface GameStateType {
   me: PlayerCardsType;
@@ -53,14 +67,26 @@ export interface GameSeriesStateType {
 }
 
 // TODO: this is actually multiple types
-export interface SeriesStateType { 
-  state: 'gameIsRunning' | 'waitingForNextGame' | 'waitingForSeriesStart' | 'gameOver';
+export interface SeriesStateType {
+  state:
+    | 'gameIsRunning'
+    | 'waitingForNextGame'
+    | 'waitingForSeriesStart'
+    | 'gameOver';
   winner?: string;
   acceptedPlayers?: string[];
 }
 
-
-export interface GameResultType { ending: EndingType; points: Map<string, number> }
+export interface GameResultType {
+  ending: EndingType;
+  points: Map<string, number>;
+}
 
 // TODO: this is actually multiple types
-export interface EndingType { type: 'yaniv' | 'asaf' | 'empty'; winner; points; caller?; winnerPoints? }
+export interface EndingType {
+  type: 'yaniv' | 'asaf' | 'empty';
+  winner;
+  points;
+  caller?;
+  winnerPoints?;
+}
