@@ -60,8 +60,8 @@ object GameSeriesLogic {
     val newAccepted = waiting.acceptedPlayers ++ Set(player)
     val allAccepted = newAccepted.size == gss.players.size
     if (allAccepted) {
-      val lastLoser     = gss.scores.minBy(_._2)._1
-      val newGame       = GameState.newGame(gss.config.gameConfig, gss.players, startingPlayer = Some(lastLoser))
+      val seriesLoser   = gss.scores.maxBy(_._2)._1
+      val newGame       = GameState.newGame(gss.config.gameConfig, gss.players, startingPlayer = Some(seriesLoser))
       val newScores     = gss.scores.keys.map(playerId => playerId -> 0).toMap
       val newScoresDiff = newScores.keys.map(playerId => playerId -> Seq.empty).toMap
       gss.copy(state = GameIsRunning, currentGame = Some(newGame), scores = newScores, scoresDiff = newScoresDiff)
