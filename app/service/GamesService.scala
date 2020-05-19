@@ -90,8 +90,11 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
   }
 
   def update(gameSeriesId: GameSeriesId, gameSeriesState: GameSeriesState): Either[String, String] = {
-    gameSeriesStates.get(gameSeriesId) match {
-      case Some(series) =>
+    synchronized {
+      for {
+        series <- validateGameSeries(gameSeriesId)
+        _ <- Either.cond(gameSeriesState.version > series.last.version, (), s"Game state version ${gameSeriesState.version} is too old, the current version is ${series.last.version}")
+      } yield {
         gameSeriesStates += gameSeriesId -> (series :+ gameSeriesState)
         println("Sending pre-game start info update")
         preGameConnectionManager ! Update(gameSeriesId, GameSeriesPreStartInfo.fromGameSeriesState(gameSeriesState))
@@ -102,8 +105,15 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
             GameSeriesStateView.fromGameSeriesState(gameSeriesState, p.id)
           )
         }
-        Right("ok")
-      case None => Left(s"Game $gameSeriesId does not exist")
+        "ok"
+      }
+    }
+  }
+
+  private def validateGameSeries(gameSeriesId: GameSeriesId): Either[String, mutable.Buffer[GameSeriesState]] = {
+    gameSeriesStates.get(gameSeriesId) match {
+      case Some(states) => Right(states)
+      case _ => Left(s"Game series $gameSeriesId does not exist")
     }
   }
 }
