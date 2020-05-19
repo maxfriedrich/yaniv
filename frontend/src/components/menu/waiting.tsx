@@ -1,4 +1,4 @@
-import { h } from 'preact';
+import { h, Fragment } from 'preact';
 
 // TODO: type should be in a common directory
 import { PlayerInfoType } from '../game/api';
@@ -12,6 +12,19 @@ export interface WaitingProps {
   removePlayer: (playerId: string) => () => void;
 }
 
+const isWebShareAvailable = (): boolean => ((window as any).navigator.share) != null;
+
+const webShare = (link: string) => () => {
+  const shareData = {
+    title: "Yaniv",
+    text: "Play Yaniv!",
+    url: link
+  };
+  (window as any).navigator.share(shareData).catch(console.error);
+}
+
+const shortenJoinLink = (link: string) => (link.length > 25) ? link.substring(0, 40) + '…' : link;
+
 export const Waiting = ({
   joinLink,
   players,
@@ -23,9 +36,17 @@ export const Waiting = ({
   <div class="card my-2">
     <div class="card-header">Waiting for players…</div>
     <div class="card-body">
-      <p>
-        Share this link: <a href={joinLink}>{joinLink}</a>
-      </p>
+      {isWebShareAvailable ? (
+        <Fragment>
+        <button class="btn btn-primary mb-2 mr-2" onClick={webShare(joinLink)}>Invite Players</button>
+      <span class="muted small">Or share this link: <a href={joinLink}>{shortenJoinLink(joinLink)}</a></span>
+        </Fragment>
+      ) : (
+        <p>
+          Share this link: <a href={joinLink}>{shortenJoinLink(joinLink)}</a>
+        </p>
+      )
+      }
       <ul class="list-group">
           {players.map(player => (
           <li class="list-group-item py-2 d-flex justify-content-between align-items-middle">
