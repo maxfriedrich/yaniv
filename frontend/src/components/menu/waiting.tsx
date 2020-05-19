@@ -12,11 +12,6 @@ export interface WaitingProps {
   removePlayer: (playerId: string) => () => void;
 }
 
-const playersStartingWithMe = (players: PlayerInfoType[], me: string): PlayerInfoType[] => {
-  const meIndex = players.findIndex(p => p.id == me);
-  return players.slice(meIndex).concat(players.slice(0, meIndex));
-}
-
 export const Waiting = ({
   joinLink,
   players,
@@ -32,7 +27,7 @@ export const Waiting = ({
         Share this link: <a href={joinLink}>{joinLink}</a>
       </p>
       <ul class="list-group">
-          {playersStartingWithMe(players, me).map(player => (
+          {players.map(player => (
           <li class="list-group-item py-2 d-flex justify-content-between align-items-middle">
             <span>
               {player.name}&nbsp;
