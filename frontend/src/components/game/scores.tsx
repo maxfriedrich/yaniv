@@ -26,10 +26,12 @@ const renderScoreDiff = (scores?: number[]) => {
   return rendered.length > 0 ? rendered.join(' ') : '';
 };
 
-const playersStartingWithMe = (players: ExtendedPlayerInfoType[]): ExtendedPlayerInfoType[] => {
+const playersStartingWithMe = (
+  players: ExtendedPlayerInfoType[]
+): ExtendedPlayerInfoType[] => {
   const meIndex = players.findIndex(p => p.isMe);
   return players.slice(meIndex).concat(players.slice(0, meIndex));
-}
+};
 
 const basicClasses =
   'list-group-item py-2 d-flex justify-content-between align-items-middle';
@@ -71,7 +73,11 @@ export const Scores = ({ players, showScoreDiff }: ScoresProps) => (
               ))}
             </div>
           </div>
-          <div className={`player-score ml-1 d-flex justify-content-end align-items-center ${showScoreDiff ? 'font-weight-bold' : ''}`}>
+          <div
+            className={`player-score ml-1 d-flex justify-content-end align-items-center ${
+              showScoreDiff ? 'font-weight-bold' : ''
+            }`}
+          >
             {showScoreDiff && !player.scoreDiff?.includes(0) ? (
               <span class="player-score-diff mr-2 small text-muted">
                 {renderScoreDiff(player.scoreDiff)}

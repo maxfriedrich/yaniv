@@ -10,20 +10,23 @@ export interface WaitingProps {
   buttonTitle: string;
   action: () => void;
   removePlayer: (playerId: string) => () => void;
+  onShareError: (error) => void;
 }
 
-const isWebShareAvailable = (): boolean => ((window as any).navigator.share) != null;
+const isWebShareAvailable = (): boolean =>
+  (window as any).navigator.share != null;
 
-const webShare = (link: string) => () => {
+const webShare = (link: string, onShareError: (error) => void) => () => {
   const shareData = {
-    title: "Yaniv",
-    text: "Play Yaniv!",
+    title: 'Yaniv',
+    text: "Let's play Yaniv!",
     url: link
   };
-  (window as any).navigator.share(shareData).catch(console.error);
-}
+  (window as any).navigator.share(shareData).catch(onShareError);
+};
 
-const shortenJoinLink = (link: string) => (link.length > 25) ? link.substring(0, 40) + '…' : link;
+const shortenJoinLink = (link: string) =>
+  link.length > 35 ? link.substring(0, 35) + '…' : link;
 
 export const Waiting = ({
   joinLink,
@@ -31,24 +34,14 @@ export const Waiting = ({
   me,
   buttonTitle,
   action,
-  removePlayer
+  removePlayer,
+  onShareError
 }: WaitingProps) => (
   <div class="card my-2">
     <div class="card-header">Waiting for players…</div>
     <div class="card-body">
-      {isWebShareAvailable ? (
-        <Fragment>
-        <button class="btn btn-primary mb-2 mr-2" onClick={webShare(joinLink)}>Invite Players</button>
-      <span class="muted small">Or share this link: <a href={joinLink}>{shortenJoinLink(joinLink)}</a></span>
-        </Fragment>
-      ) : (
-        <p>
-          Share this link: <a href={joinLink}>{shortenJoinLink(joinLink)}</a>
-        </p>
-      )
-      }
       <ul class="list-group">
-          {players.map(player => (
+        {players.map(player => (
           <li class="list-group-item py-2 d-flex justify-content-between align-items-middle">
             <span>
               {player.name}&nbsp;
@@ -67,9 +60,27 @@ export const Waiting = ({
             )}
           </li>
         ))}
+        <li class="list-group-item d-flex justify-content-start align-items-middle">
+          {isWebShareAvailable() ? (
+            <Fragment>
+              <button
+                class="btn btn-outline-primary btn-sm mr-2"
+                onClick={webShare(joinLink, onShareError)}
+              >
+                🔗 Invite Players
+              </button>
+            </Fragment>
+          ) : (
+            <a href={joinLink}>
+              <button class="btn btn-outline-primary btn-sm mr-2">
+                🔗 Long-press to select the Join Link
+              </button>
+            </a>
+          )}
+        </li>
       </ul>
       <button
-        class="btn btn-primary my-2"
+        class="btn btn-primary mt-2 float-right"
         disabled={players.length < 2}
         onClick={action}
       >
