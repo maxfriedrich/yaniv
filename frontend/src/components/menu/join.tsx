@@ -22,7 +22,7 @@ export const Join = ({ name, updateName, buttonTitle, action }: JoinProps) => (
           />
         </div>
         <button
-          class="btn btn-primary"
+          class="btn btn-primary float-right"
           disabled={!name || name.trim().length === 0}
           onClick={action}
         >

@@ -35,10 +35,18 @@ const playersStartingWithMe = (
 
 const basicClasses =
   'list-group-item py-2 d-flex justify-content-between align-items-middle';
-const activeClass = 'active';
+const activeMeClass = 'active';
+const activeOtherClass = 'list-group-item-primary';
 
-const listGroupClasses = (active: boolean) =>
-  `${basicClasses} ${active ? activeClass : ''}`;
+const listGroupClasses = (active: boolean, me: boolean) => {
+  if (!active) {
+    return basicClasses;
+  }
+  if (me) {
+    return `${basicClasses} ${activeMeClass}`;
+  }
+  return `${basicClasses} ${activeOtherClass}`;
+};
 
 const meBadgeClasses = (active: boolean) =>
   `badge ${active ? 'badge-light' : 'badge-primary'}`;
@@ -52,7 +60,7 @@ export const Scores = ({ players, showScoreDiff }: ScoresProps) => (
   <div class="card my-2">
     <ul class="list-group list-group-flush">
       {playersStartingWithMe(players).map(player => (
-        <li className={listGroupClasses(player.isCurrentPlayer)}>
+        <li className={listGroupClasses(player.isCurrentPlayer, player.isMe)}>
           <div class="d-flex flex-column justify-content-center">
             <div>
               {player.name}&nbsp;

@@ -11,7 +11,7 @@ const App = () => (
   <div class="container">
     <nav class="navbar navbar-light bg-light">
       <a class="navbar-brand" href="/">
-        Yaniv
+        🃏Yaniv
       </a>
     </nav>
     <Router>
