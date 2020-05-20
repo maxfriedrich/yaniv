@@ -25,9 +25,6 @@ const webShare = (link: string, onShareError: (error) => void) => () => {
   (window as any).navigator.share(shareData).catch(onShareError);
 };
 
-const shortenJoinLink = (link: string) =>
-  link.length > 35 ? link.substring(0, 35) + '…' : link;
-
 export const Waiting = ({
   joinLink,
   players,
