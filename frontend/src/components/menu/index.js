@@ -204,6 +204,7 @@ export class Menu extends Component {
             buttonTitle="Start Game"
             action={this.startGame}
             removePlayer={this.removePlayer}
+            onShareError={this.flash}
           />
         ) : (
           <Join
