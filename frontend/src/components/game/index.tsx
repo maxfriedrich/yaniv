@@ -263,7 +263,7 @@ export class Game extends Component<
   isYanivDisabled = () =>
     !this.isCurrentPlayerThrow() ||
     this.state.selected.length > 0 ||
-    this.state.sortedCards.map(c => c.endValue).reduce((acc, x) => acc + x) > 5;
+    this.state.sortedCards.map(c => c.endValue).reduce((acc, x) => acc + x, 0) > 5;
 
   drawFromPile = (card: CardType) => {
     console.log('Drawing from pile: ', card.id);
@@ -321,7 +321,7 @@ export class Game extends Component<
               console.log('scheduled');
               const newSortedCards = this.updateSortedCards(
                 newServerState.currentGame.me.cards,
-                []
+                this.state.selected
               );
               this.setState({
                 sortedCards: newSortedCards,
