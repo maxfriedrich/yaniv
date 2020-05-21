@@ -13,6 +13,7 @@ case class GameStateView(
     playerOrder: Seq[PlayerId],
     currentPlayer: PlayerId,
     nextAction: GameAction,
+    lastAction: LastGameAction,
     pile: PileView,
     deck: Int,
     ending: Option[GameResult]
@@ -34,6 +35,7 @@ object GameStateView {
       gameState.players.map(_.id),
       gameState.currentPlayer,
       gameState.nextAction,
+      gameState.lastAction,
       PileView.fromPile(gameState.pile),
       gameState.deck.size,
       gameState.ending

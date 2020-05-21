@@ -44,6 +44,11 @@ object JsonImplicits {
     case s => JsError(s"Not a valid draw source: $s")
   }
 
+  implicit val drawSourceWrites: Writes[DrawSource] = Writes {
+    case DeckSource       => JsString(Strings.Deck)
+    case PileSource(card) => JsString(card.id)
+  }
+
   case class DrawCardClientResponse(source: DrawSource)
   implicit val drawCardClientResponseReads: Reads[DrawCardClientResponse] = Json.reads[DrawCardClientResponse]
 
@@ -62,13 +67,36 @@ object JsonImplicits {
     case Draw  => JsString(Strings.Draw)
   }
 
+  case class JsonStarted(`type`: String)
+  case class JsonDrawn(`type`: String, source: DrawSource)
+  case class JsonThrown(`type`: String, cards: Seq[Card])
+  case class JsonDrawThrown(`type`: String, card: Card)
+
+  implicit val lastGameActionReads: Reads[LastGameAction] = Reads { json =>
+    json \ "type" match {
+      case JsDefined(JsString(Strings.Started))    => JsSuccess(Started)
+      case JsDefined(JsString(Strings.Drawn))      => Json.reads[Drawn].reads(json)
+      case JsDefined(JsString(Strings.Thrown))     => Json.reads[Thrown].reads(json)
+      case JsDefined(JsString(Strings.DrawThrown)) => Json.reads[DrawThrown].reads(json)
+      case JsDefined(s)                            => JsError(s"Not a valid last action: ${s.toString}")
+      case _                                       => JsError("Missing `type` field in LastGameAction object")
+    }
+  }
+
+  implicit val lastGameActionWrites: Writes[LastGameAction] = Writes {
+    case Started          => Json.writes[JsonStarted].writes(JsonStarted(Strings.Started))
+    case Drawn(source)    => Json.writes[JsonDrawn].writes(JsonDrawn(Strings.Drawn, source))
+    case Thrown(cards)    => Json.writes[JsonThrown].writes(JsonThrown(Strings.Thrown, cards))
+    case DrawThrown(card) => Json.writes[JsonDrawThrown].writes(JsonDrawThrown(Strings.DrawThrown, card))
+  }
+
   implicit val gameEndingReads: Reads[GameEnding] = Reads { json =>
     json \ "type" match {
       case JsDefined(JsString(Strings.Yaniv)) => Json.reads[Yaniv].reads(json)
       case JsDefined(JsString(Strings.Asaf))  => Json.reads[Asaf].reads(json)
       case JsDefined(JsString(Strings.Empty)) => Json.reads[EmptyHand].reads(json)
       case JsDefined(s)                       => JsError(s"Not a valid game ending type: ${s.toString}")
-      case _                                  => JsError(s"Missing `type` field in GameEnding object")
+      case _                                  => JsError("Missing `type` field in GameEnding object")
     }
   }
 
@@ -174,6 +202,12 @@ object Strings {
   val Deck  = "deck"
   val Draw  = "draw"
   val Throw = "throw"
+
+  val Started    = "started"
+  val Drawn      = "drawn"
+  val Thrown     = "thrown"
+  val DrawThrown = "drawThrown"
+
   val Yaniv = "yaniv"
   val Asaf  = "asaf"
   val Empty = "empty"
