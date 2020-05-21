@@ -1,5 +1,8 @@
 /* CARDS */
 
+$animation-duration: 0.2s;
+$animation-timing: ease-out;
+
 .game-card {
 	display         : flex;
 	flex-direction  : column;
@@ -53,6 +56,17 @@
 	background: lightgreen;
 }
 
+@keyframes draw-throw {
+	from {
+		// TODO
+	}
+}
+
+.animate-drawthrow {
+	animation: draw-throw $animation-duration $animation-timing;
+}
+
+
 /* HAND */
 
 .smooth-dnd-container.horizontal {
@@ -103,6 +117,16 @@
 	z-index        : 2;
 }
 
+@keyframes throw-top {
+	from {
+		margin-top: 2vh;
+	}
+}
+
+.top-container.animate-throw {
+	animation: throw-top $animation-duration $animation-timing;
+}
+
 .drawable-container {
 	display        : flex;
 	justify-content: center;
@@ -111,10 +135,30 @@
 	z-index        : 1;
 }
 
+@keyframes throw-drawable {
+	from {
+		margin-top: -10vh;
+	}
+}
+
+.drawable-container.animate-throw {
+	animation: throw-drawable $animation-duration $animation-timing;
+}
+
 
 .pile-bottom {
 	z-index: 0;
 	margin : -7vh auto 0;
+}
+
+@keyframes throw-bottom {
+	from {
+		margin-top: -7vh;
+	}
+}
+
+.pile-bottom.animate-throw {
+	animation: throw-bottom $animation-duration $animation-timing;
 }
 
 // card size = 1/5 * full width - 1vw == 20% - 1vw

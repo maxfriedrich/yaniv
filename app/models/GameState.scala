@@ -6,6 +6,12 @@ sealed trait GameAction
 case object Throw extends GameAction
 case object Draw  extends GameAction
 
+sealed trait LastGameAction
+case object Started                  extends LastGameAction
+case class Drawn(source: DrawSource) extends LastGameAction
+case class Thrown(cards: Seq[Card])  extends LastGameAction
+case class DrawThrown(card: Card)    extends LastGameAction
+
 case class PlayerCards(id: PlayerId, cards: Seq[Card], drawThrowable: Option[Card])
 
 sealed trait DrawSource
@@ -26,6 +32,7 @@ case class GameState(
     players: Seq[PlayerCards],
     currentPlayer: PlayerId,
     nextAction: GameAction,
+    lastAction: LastGameAction,
     pile: Pile,
     deck: Seq[Card],
     ending: Option[GameResult]
@@ -41,6 +48,7 @@ object GameState {
       },
       currentPlayer = startingPlayer.getOrElse(players.head.id),
       nextAction = Throw,
+      lastAction = Started,
       pile = shuffled.pile,
       deck = shuffled.deck,
       ending = None

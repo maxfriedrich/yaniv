@@ -58,6 +58,7 @@ object GameLogic {
       gs.copy(
         players = newPlayers,
         nextAction = Draw,
+        lastAction = Thrown(cards),
         pile = gs.pile.throwCards(cards)
       )
     }
@@ -86,6 +87,7 @@ object GameLogic {
         players = gs.players.map { p => if (p.id == playerId) newPlayer else p },
         currentPlayer = nextPlayer(gs),
         nextAction = Throw,
+        lastAction = Drawn(source),
         pile = newPile,
         deck = newDeck
       )
@@ -114,6 +116,7 @@ object GameLogic {
         if (newPlayer.cards.isEmpty) Some(GameResult(EmptyHand(playerId), computeGameScores(newPlayers))) else None
       gs.copy(
         players = gs.players.map { p => if (p.id == playerId) newPlayer else p },
+        lastAction = DrawThrown(card),
         pile = newPile,
         ending = ending
       )

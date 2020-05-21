@@ -12,7 +12,8 @@ import { applyDrag } from './drag';
 
 import { Flash, FlashTransitionTimeout } from '../common/flash';
 import { Scores } from './scores';
-import { Pile, Deck } from './table';
+import { Deck } from './deck';
+import { Pile } from './pile';
 import { Hand } from './hand';
 import { NextGameControls } from './next';
 import { Actions } from './actions';
@@ -263,7 +264,7 @@ export class Game extends Component<
   isYanivDisabled = () =>
     !this.isCurrentPlayerThrow() ||
     this.state.selected.length > 0 ||
-    this.state.sortedCards.map(c => c.endValue).reduce((acc, x) => acc + x) > 5;
+    this.state.sortedCards.map(c => c.endValue).reduce((acc, x) => acc + x, 0) > 5;
 
   drawFromPile = (card: CardType) => {
     console.log('Drawing from pile: ', card.id);
@@ -321,7 +322,7 @@ export class Game extends Component<
               console.log('scheduled');
               const newSortedCards = this.updateSortedCards(
                 newServerState.currentGame.me.cards,
-                []
+                this.state.selected
               );
               this.setState({
                 sortedCards: newSortedCards,
@@ -452,6 +453,7 @@ export class Game extends Component<
               pile={serverState.currentGame?.pile}
               disabled={!this.isCurrentPlayerDraw()}
               drawAction={this.drawFromPile}
+              lastActionTmp={serverState.currentGame?.lastAction}
             />
             <Deck
               deck={serverState.currentGame?.deck}
