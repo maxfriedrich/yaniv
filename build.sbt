@@ -1,7 +1,8 @@
 name := """yaniv"""
 organization := "de.maxfriedrich"
-
 version := "1.0-SNAPSHOT"
+
+scalaVersion := "2.13.1"
 
 lazy val game = (project in file("game"))
   .withId("yaniv-game")
@@ -18,11 +19,3 @@ lazy val rest = (project in file("rest"))
     libraryDependencies += guice
   )
   .dependsOn(game)
-
-scalaVersion := "2.13.1"
-
-// Adds additional packages into Twirl
-//TwirlKeys.templateImports += "de.maxfriedrich.controllers._"
-
-// Adds additional packages into conf/routes
-// play.sbt.routes.RoutesKeys.routesImport += "de.maxfriedrich.binders._"
