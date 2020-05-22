@@ -9,7 +9,7 @@ lazy val game = (project in file("game"))
   .settings(
     libraryDependencies += "com.typesafe.play" %% "play-json" % "2.8.0",
     libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
-)
+  )
 
 
 lazy val rest = (project in file("rest"))
