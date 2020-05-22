@@ -12,7 +12,7 @@ lazy val game = (project in file("game"))
   )
 
 lazy val ai = (project in file("ai"))
-  .withId("yaniv-ai")
+  .settings(name := "yaniv-ai")
   .dependsOn(game)
 
 lazy val rest = (project in file("rest"))
@@ -24,4 +24,4 @@ lazy val rest = (project in file("rest"))
   .dependsOn(game)
 
 lazy val root = (project in file("."))
-  .aggregate(game, rest)
+  .aggregate(game, ai, rest)
