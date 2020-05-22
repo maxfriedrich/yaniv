@@ -30,7 +30,7 @@ jobs:
     - name: Run Scala tests
       run: sbt test
     - name: Scala production build
-      run: sbt dist
+      run: sbt "project rest" dist
     - name: Deploy to Uberspace
       uses: easingthemes/ssh-deploy@v2.1.2
       env:
