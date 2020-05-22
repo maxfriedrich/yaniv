@@ -11,6 +11,10 @@ lazy val game = (project in file("game"))
     libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
   )
 
+lazy val ai = (project in file("ai"))
+  .withId("yaniv-ai")
+  .dependsOn(game)
+
 lazy val rest = (project in file("rest"))
   .withId("yaniv-rest")
   .enablePlugins(PlayScala)
