@@ -1,5 +1,6 @@
 /* CARDS */
 
+$animations-on: false;
 $animation-duration: 0.2s;
 $animation-timing: ease-out;
 
@@ -63,7 +64,9 @@ $animation-timing: ease-out;
 }
 
 .animate-drawthrow {
-	animation: draw-throw $animation-duration $animation-timing;
+	@if $animations-on {
+		animation:  draw-throw $animation-duration $animation-timing;
+	}
 }
 
 
@@ -124,7 +127,9 @@ $animation-timing: ease-out;
 }
 
 .top-container.animate-throw {
-	animation: throw-top $animation-duration $animation-timing;
+	@if $animations-on {
+		animation: throw-top $animation-duration $animation-timing;
+	}
 }
 
 .drawable-container {
@@ -142,7 +147,9 @@ $animation-timing: ease-out;
 }
 
 .drawable-container.animate-throw {
-	animation: throw-drawable $animation-duration $animation-timing;
+	@if $animations-on {
+		animation: throw-drawable $animation-duration $animation-timing;
+	}
 }
 
 
@@ -158,7 +165,9 @@ $animation-timing: ease-out;
 }
 
 .pile-bottom.animate-throw {
-	animation: throw-bottom $animation-duration $animation-timing;
+	@if $animations-on {
+		animation: throw-bottom $animation-duration $animation-timing;
+	}
 }
 
 // card size = 1/5 * full width - 1vw == 20% - 1vw
