@@ -37,7 +37,7 @@ jobs:
         SSH_PRIVATE_KEY: ${{ secrets.DEPLOYMENT_SSH_PRIVATE_KEY }}
         REMOTE_HOST: ${{ secrets.DEPLOYMENT_SSH_HOST }}
         REMOTE_USER: ${{ secrets.DEPLOYMENT_SSH_USER }}
-        SOURCE: target/universal/yaniv-*.zip
+        SOURCE: rest/target/universal/yaniv-*.zip
         TARGET: /home/${{ secrets.DEPLOYMENT_SSH_USER }}/yaniv
         ARGS: "-rltgoDzvO --delete"
     - name: Restart production service
