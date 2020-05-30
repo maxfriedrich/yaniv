@@ -17,9 +17,9 @@ import service.ConnectionManager.{Register, Unregister, Update}
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 
-class GamesService(implicit as: ActorSystem, mat: Materializer) {
+class GamesStorageService(implicit as: ActorSystem, mat: Materializer) {
 
-  import GamesService._
+  import GamesStorageService._
 
   val gameSeriesStates = mutable.Map.empty[GameSeriesId, mutable.Buffer[GameSeriesState]]
   gameSeriesStates += DummyGame.dummyGame
@@ -114,7 +114,7 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
     }
 }
 
-object GamesService {
+object GamesStorageService {
   private def newSourceActor[K, V](connectionManager: ActorRef, key: K)(
       implicit ec: ExecutionContext
   ): Source[V, ActorRef] = {

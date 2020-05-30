@@ -20,7 +20,7 @@ class GamesServiceSpec extends FlatSpec with BeforeAndAfterAll {
   }
 
   case class DrawThrowSetup(
-      gamesService: GamesService,
+      gamesService: GamesStorageService,
       gameSeriesId: GameSeriesId,
       currentSeriesState: GameSeriesState,
       previousSeriesState: GameSeriesState,
@@ -33,7 +33,7 @@ class GamesServiceSpec extends FlatSpec with BeforeAndAfterAll {
       GameSeriesConfig.Default.copy(gameConfig = GameConfig.Default.copy(deck = eights, playerNumCards = 1))
     val id = "test"
     val s0 = GameSeriesState.empty(gsConfig, id)
-    val gs = new GamesService()
+    val gs = new GamesStorageService()
     val result = for {
       _  <- gs.create(s0)
       s1 <- GameSeriesLogic.addPlayer(s0, PlayerInfo("P1", "p1"))
