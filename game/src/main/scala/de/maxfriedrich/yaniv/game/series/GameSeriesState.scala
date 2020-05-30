@@ -19,7 +19,7 @@ case class GameOver(winner: PlayerId, acceptedPlayers: Set[PlayerId]) extends Hi
 case class GameSeriesState(
     config: GameSeriesConfig,
     id: GameSeriesId,
-    version: Int,
+    version: Int = 0,
     players: Seq[PlayerInfo],
     state: HighLevelState,
     currentGame: Option[GameState],
@@ -30,6 +30,7 @@ case class GameSeriesState(
   val timestamp: LocalDateTime = java.time.LocalDateTime.now
 
   // copy forcing a version update but dumb otherwise (use GameSeriesLogic methods instead!)
+  // TODO: not very nice to mix logic into the case class :/
   private[series] def copy(
       config: GameSeriesConfig = config,
       players: Seq[PlayerInfo] = players,
