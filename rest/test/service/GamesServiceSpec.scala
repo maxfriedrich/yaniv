@@ -68,10 +68,11 @@ class GamesServiceSpec extends FlatSpec with BeforeAndAfterAll {
       )
       invalidSeriesState <- GameSeriesLogic.updateGameState(setup.currentSeriesState, invalidState)
       _                  <- setup.gamesService.update(setup.gameSeriesId, invalidSeriesState)
-    } yield "should not happen!"
+    } yield "should not happen!" // caught by GamesService
     assert(result.isLeft && result.left.get.contains("too old"))
   }
 
+  // this is caught by GameSeriesLogic, so it should not be part of this spec
   "Games service" should "accept new game state if version is set correctly (updating previous series state)" in {
     val setup           = setupDrawThrowGame()
     val drawThrowPlayer = GameLogic.previousPlayer(setup.previousGameState)
@@ -84,7 +85,7 @@ class GamesServiceSpec extends FlatSpec with BeforeAndAfterAll {
       )
       invalidSeriesState <- GameSeriesLogic.updateGameState(setup.previousSeriesState, invalidState)
       _                  <- setup.gamesService.update(setup.gameSeriesId, invalidSeriesState)
-    } yield "should not happen!" //
+    } yield "should not happen!" // caught by GameSeriesLogic
     assert(result.isLeft && result.left.get.contains("too old"))
   }
 }
