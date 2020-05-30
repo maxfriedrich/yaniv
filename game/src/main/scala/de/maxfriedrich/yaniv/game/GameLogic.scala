@@ -26,7 +26,7 @@ object GameLogic {
   private def validateGameState(
       gs: GameState,
       playerId: PlayerId,
-      expectedAction: GameAction,
+      expectedAction: GameActionType,
       drawThrow: Boolean = false
   ): Either[String, GameState] = {
     if (!drawThrow && gs.currentPlayer != playerId)
@@ -43,7 +43,7 @@ object GameLogic {
 
   def throwCards(gs: GameState, playerId: PlayerId, cards: Seq[Card]): Either[String, GameState] = {
     for {
-      _ <- validateGameState(gs, playerId, Throw)
+      _ <- validateGameState(gs, playerId, ThrowType)
       _ <- Either.cond(cards.distinct.size == cards.size, (), "Duplicate cards")
       _ <- Either.cond(isValidCombination(cards), (), "Not a valid combination")
       player = gs.players.find(_.id == playerId).get
@@ -57,8 +57,8 @@ object GameLogic {
       }
       gs.copy(
         players = newPlayers,
-        nextAction = Draw,
-        lastAction = Thrown(cards),
+        nextAction = DrawType,
+        lastAction = Throw(cards),
         pile = gs.pile.throwCards(cards)
       )
     }
@@ -66,7 +66,7 @@ object GameLogic {
 
   def drawCard(gs: GameState, playerId: PlayerId, source: DrawSource): Either[String, GameState] = {
     for {
-      _ <- validateGameState(gs, playerId, Draw)
+      _ <- validateGameState(gs, playerId, DrawType)
     } yield {
       val (newCard, drawThrowable, newDeck, newPile) = source match {
         case DeckSource if gs.deck.size > 1 =>
@@ -86,8 +86,8 @@ object GameLogic {
       gs.copy(
         players = gs.players.map { p => if (p.id == playerId) newPlayer else p },
         currentPlayer = nextPlayer(gs),
-        nextAction = Throw,
-        lastAction = Drawn(source),
+        nextAction = ThrowType,
+        lastAction = Draw(source),
         pile = newPile,
         deck = newDeck
       )
@@ -97,7 +97,7 @@ object GameLogic {
   def drawThrowCard(gs: GameState, playerId: PlayerId, card: Card): Either[String, GameState] = {
     println(s"current player: $playerId, previous player: ${previousPlayer(gs)}")
     for {
-      _                 <- validateGameState(gs, playerId, Throw, drawThrow = true)
+      _                 <- validateGameState(gs, playerId, ThrowType, drawThrow = true)
       drawThrowLocation <- findDrawThrowLocation(card, gs.pile.top)
       playerCards = gs.players.find(_.id == playerId).get
       _ <- Either.cond(playerCards.cards.contains(card), (), "Player does not have this card")
@@ -116,7 +116,7 @@ object GameLogic {
         if (newPlayer.cards.isEmpty) Some(GameResult(EmptyHand(playerId), computeGameScores(newPlayers))) else None
       gs.copy(
         players = gs.players.map { p => if (p.id == playerId) newPlayer else p },
-        lastAction = DrawThrown(card),
+        lastAction = DrawThrow(card),
         pile = newPile,
         ending = ending
       )
@@ -125,7 +125,7 @@ object GameLogic {
 
   def callYaniv(gs: GameState, playerId: PlayerId): Either[String, GameState] =
     for {
-      _ <- validateGameState(gs, playerId, Throw)
+      _ <- validateGameState(gs, playerId, ThrowType)
       player       = gs.players.find(_.id == playerId).get
       playerPoints = player.cards.map(_.endValue).sum
       _ <- Either.cond(

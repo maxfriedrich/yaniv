@@ -10,11 +10,8 @@ POST    /rest/game/:gameSeriesId/start                          controllers.Game
 
 GET     /rest/game/:gameSeriesId/player/:playerId/state         controllers.GameController.state(gameSeriesId: String, playerId: String)
 GET     /rest/game/:gameSeriesId/player/:playerId/state/stream  controllers.GameController.stateStream(gameSeriesId: String, playerId: String)
-POST    /rest/game/:gameSeriesId/player/:playerId/throw         controllers.GameController.throwCards(gameSeriesId: String, playerId: String)
-POST    /rest/game/:gameSeriesId/player/:playerId/draw          controllers.GameController.draw(gameSeriesId: String, playerId: String)
-POST    /rest/game/:gameSeriesId/player/:playerId/drawThrow     controllers.GameController.drawThrow(gameSeriesId: String, playerId: String)
-POST    /rest/game/:gameSeriesId/player/:playerId/yaniv         controllers.GameController.yaniv(gameSeriesId: String, playerId: String)
 POST    /rest/game/:gameSeriesId/player/:playerId/next          controllers.GameController.next(gameSeriesId: String, playerId: String)
+POST    /rest/game/:gameSeriesId/player/:playerId/:action       controllers.GameController.gameAction(gameSeriesId: String, playerId: String, action: String)
 
 GET     /rest/test-stream                                       controllers.GameController.testStream()
 

@@ -31,9 +31,6 @@ object JsonImplicits {
   implicit val drawableCardReads: Reads[DrawableCard]   = Json.reads[DrawableCard]
   implicit val drawableCardWrites: Writes[DrawableCard] = Json.writes[DrawableCard]
 
-  case class ThrowCardsClientResponse(cards: Seq[Card])
-  implicit val throwCardsClientResponseReads: Reads[ThrowCardsClientResponse] = Json.reads[ThrowCardsClientResponse]
-
   implicit val drawSourceReads: Reads[DrawSource] = Reads {
     case JsString(Strings.Deck) => JsSuccess(DeckSource)
     case JsString(s) =>
@@ -49,45 +46,44 @@ object JsonImplicits {
     case PileSource(card) => JsString(card.id)
   }
 
-  case class DrawCardClientResponse(source: DrawSource)
-  implicit val drawCardClientResponseReads: Reads[DrawCardClientResponse] = Json.reads[DrawCardClientResponse]
+  implicit val throwReads: Reads[Throw]         = Json.reads[Throw]
+  implicit val drawReads: Reads[Draw]           = Json.reads[Draw]
+  implicit val drawThrowReads: Reads[DrawThrow] = Json.reads[DrawThrow]
 
-  case class DrawThrowCardClientResponse(card: Card)
-  implicit val drawThrowCardClientResponseReads: Reads[DrawThrowCardClientResponse] =
-    Json.reads[DrawThrowCardClientResponse]
-
-  implicit val gameActionReads: Reads[GameAction] = Reads {
-    case JsString(Strings.Throw) => JsSuccess(Throw)
-    case JsString(Strings.Draw)  => JsSuccess(Draw)
+  implicit val gameActionTypeReads: Reads[GameActionType] = Reads {
+    case JsString(Strings.Throw) => JsSuccess(ThrowType)
+    case JsString(Strings.Draw)  => JsSuccess(DrawType)
     case s                       => JsError(s"Not a valid game action: ${s.toString}")
   }
 
-  implicit val gameActionWrites: Writes[GameAction] = Writes {
-    case Throw => JsString(Strings.Throw)
-    case Draw  => JsString(Strings.Draw)
+  implicit val gameActionTypeWrites: Writes[GameActionType] = Writes {
+    case ThrowType => JsString(Strings.Throw)
+    case DrawType  => JsString(Strings.Draw)
   }
 
   case class JsonStarted(`type`: String)
   case class JsonDrawn(`type`: String, source: DrawSource)
   case class JsonThrown(`type`: String, cards: Seq[Card])
   case class JsonDrawThrown(`type`: String, card: Card)
+  case class JsonYaniv(`type`: String)
 
-  implicit val lastGameActionReads: Reads[LastGameAction] = Reads { json =>
+  implicit val gameActionReads: Reads[GameAction] = Reads { json =>
     json \ "type" match {
-      case JsDefined(JsString(Strings.Started))    => JsSuccess(Started)
-      case JsDefined(JsString(Strings.Drawn))      => Json.reads[Drawn].reads(json)
-      case JsDefined(JsString(Strings.Thrown))     => Json.reads[Thrown].reads(json)
-      case JsDefined(JsString(Strings.DrawThrown)) => Json.reads[DrawThrown].reads(json)
+      case JsDefined(JsString(Strings.Started))    => JsSuccess(Start)
+      case JsDefined(JsString(Strings.Drawn))      => Json.reads[Draw].reads(json)
+      case JsDefined(JsString(Strings.Thrown))     => Json.reads[Throw].reads(json)
+      case JsDefined(JsString(Strings.DrawThrown)) => Json.reads[DrawThrow].reads(json)
       case JsDefined(s)                            => JsError(s"Not a valid last action: ${s.toString}")
       case _                                       => JsError("Missing `type` field in LastGameAction object")
     }
   }
 
-  implicit val lastGameActionWrites: Writes[LastGameAction] = Writes {
-    case Started          => Json.writes[JsonStarted].writes(JsonStarted(Strings.Started))
-    case Drawn(source)    => Json.writes[JsonDrawn].writes(JsonDrawn(Strings.Drawn, source))
-    case Thrown(cards)    => Json.writes[JsonThrown].writes(JsonThrown(Strings.Thrown, cards))
-    case DrawThrown(card) => Json.writes[JsonDrawThrown].writes(JsonDrawThrown(Strings.DrawThrown, card))
+  implicit val gameActionWrites: Writes[GameAction] = Writes {
+    case Start           => Json.writes[JsonStarted].writes(JsonStarted(Strings.Started))
+    case Draw(source)    => Json.writes[JsonDrawn].writes(JsonDrawn(Strings.Drawn, source))
+    case Throw(cards)    => Json.writes[JsonThrown].writes(JsonThrown(Strings.Thrown, cards))
+    case DrawThrow(card) => Json.writes[JsonDrawThrown].writes(JsonDrawThrown(Strings.DrawThrown, card))
+    case Yaniv           => Json.writes[JsonYaniv].writes(JsonYaniv(Strings.Yaniv))
   }
 
   implicit val gameEndingReads: Reads[GameEnding] = Reads { json =>
@@ -100,15 +96,15 @@ object JsonImplicits {
     }
   }
 
-  case class JsonYaniv(`type`: String, winner: PlayerId, points: Int)
-  case class JsonAsaf(`type`: String, caller: PlayerId, points: Int, winner: PlayerId, winnerPoints: Int)
-  case class JsonEmptyHand(`type`: String, winner: PlayerId)
+  case class JsonYanivEnding(`type`: String, winner: PlayerId, points: Int)
+  case class JsonAsafEnding(`type`: String, caller: PlayerId, points: Int, winner: PlayerId, winnerPoints: Int)
+  case class JsonEmptyHandEnding(`type`: String, winner: PlayerId)
 
   implicit val gameEndingWrites: Writes[GameEnding] = Writes {
-    case Yaniv(caller, points) => Json.writes[JsonYaniv].writes(JsonYaniv(Strings.Yaniv, caller, points))
+    case Yaniv(caller, points) => Json.writes[JsonYanivEnding].writes(JsonYanivEnding(Strings.Yaniv, caller, points))
     case Asaf(caller, points, winner, winnerPoints) =>
-      Json.writes[JsonAsaf].writes(JsonAsaf(Strings.Asaf, caller, points, winner, winnerPoints))
-    case EmptyHand(player) => Json.writes[JsonEmptyHand].writes(JsonEmptyHand(Strings.Empty, player))
+      Json.writes[JsonAsafEnding].writes(JsonAsafEnding(Strings.Asaf, caller, points, winner, winnerPoints))
+    case EmptyHand(player) => Json.writes[JsonEmptyHandEnding].writes(JsonEmptyHandEnding(Strings.Empty, player))
   }
 
   implicit val gameResultReads: Reads[GameResult]   = Json.reads[GameResult]
@@ -203,6 +199,7 @@ object Strings {
   val Draw  = "draw"
   val Throw = "throw"
 
+  // TODO these don't match the new "game action" name of the type
   val Started    = "started"
   val Drawn      = "drawn"
   val Thrown     = "thrown"

@@ -12,8 +12,8 @@ case class GameStateView(
     otherPlayers: Seq[PlayerCardsView],
     playerOrder: Seq[PlayerId],
     currentPlayer: PlayerId,
-    nextAction: GameAction,
-    lastAction: LastGameAction,
+    nextAction: GameActionType,
+    lastAction: GameAction,
     pile: PileView,
     deck: Int,
     ending: Option[GameResult]
