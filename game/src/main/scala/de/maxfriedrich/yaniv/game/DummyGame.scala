@@ -14,7 +14,6 @@ object DummyGame {
       GameSeriesState(
         config,
         id = "g1",
-        version = 1,
         players = Seq(PlayerInfo("p1", "Max"), series.PlayerInfo("p2", "Pauli")),
         state = GameIsRunning,
         currentGame = Some(
@@ -64,7 +63,6 @@ object DummyGame {
       GameSeriesState(
         config,
         id = "g3",
-        version = 1,
         players = Seq(PlayerInfo("p1", "Max"), series.PlayerInfo("p2", "Pauli")),
         state = WaitingForNextGame(Set("p1")),
         currentGame = Some(
@@ -119,7 +117,6 @@ object DummyGame {
       GameSeriesState(
         config,
         id = "g4",
-        version = 1,
         players = Seq(PlayerInfo("p1", "Max")),
         state = GameIsRunning,
         currentGame = Some(
@@ -149,7 +146,6 @@ object DummyGame {
       GameSeriesState(
         config,
         id = "g5",
-        version = 1,
         players = Seq(PlayerInfo("p1", "Max"), PlayerInfo("p2", "Pauli")),
         state = GameOver("p1", Set.empty),
         currentGame = Some(

@@ -70,38 +70,55 @@ object GameSeriesLogic {
     }
   }
 
-  def updateGameState(gss: GameSeriesState, gs: GameState): GameSeriesState = gs.ending match {
-    case Some(result) =>
-      val newScoresBeforeRules = gss.scores.map {
-        case (playerId, oldScore) => playerId -> (oldScore + result.points(playerId))
-      }
-      val winner = result.ending match {
-        case Yaniv(caller, _)      => caller
-        case Asaf(_, _, winner, _) => winner
-        case EmptyHand(player)     => player
-      }
-      val excludedFromRules = result.points.filter { case (playerId, score) => score == 0 }.keys.toSet
-      val newScoresAfterRules =
-        applyPointRules(gss.config.pointRules, gs.players, newScoresBeforeRules, excludedFromRules)
+  def updateGameState(gss: GameSeriesState, gs: GameState): Either[String, GameSeriesState] =
+    for {
+      _ <- validateGameStateVersion(gss, gs)
+    } yield {
+      gs.ending match {
 
-      val scoresDiff = gss.scores.map {
-        case (playerId, oldScore) =>
-          val firstDiff  = newScoresBeforeRules(playerId) - oldScore
-          val secondDiff = newScoresAfterRules(playerId) - newScoresBeforeRules(playerId)
-          playerId -> Seq(firstDiff, secondDiff).filter(_ != 0)
-      }
+        case Some(result) =>
+          val newScoresBeforeRules = gss.scores.map {
+            case (playerId, oldScore) => playerId -> (oldScore + result.points(playerId))
+          }
+          val winner = result.ending match {
+            case Yaniv(caller, _)      => caller
+            case Asaf(_, _, winner, _) => winner
+            case EmptyHand(player)     => player
+          }
+          val excludedFromRules = result.points.filter { case (playerId, score) => score == 0 }.keys.toSet
+          val newScoresAfterRules =
+            applyPointRules(gss.config.pointRules, gs.players, newScoresBeforeRules, excludedFromRules)
 
-      val newState =
-        checkSeriesEnding(newScoresAfterRules, gss.config.losingPoints).getOrElse(WaitingForNextGame(Set.empty))
-      gss.copy(
-        state = newState,
-        currentGame = Some(gs),
-        lastWinner = Some(winner),
-        scores = newScoresAfterRules,
-        scoresDiff = scoresDiff
-      )
-    case None => gss.copy(currentGame = Some(gs))
-  }
+          val scoresDiff = gss.scores.map {
+            case (playerId, oldScore) =>
+              val firstDiff  = newScoresBeforeRules(playerId) - oldScore
+              val secondDiff = newScoresAfterRules(playerId) - newScoresBeforeRules(playerId)
+              playerId -> Seq(firstDiff, secondDiff).filter(_ != 0)
+          }
+
+          val newState =
+            checkSeriesEnding(newScoresAfterRules, gss.config.losingPoints).getOrElse(WaitingForNextGame(Set.empty))
+          gss.copy(
+            state = newState,
+            currentGame = Some(gs),
+            lastWinner = Some(winner),
+            scores = newScoresAfterRules,
+            scoresDiff = scoresDiff
+          )
+        case None => gss.copy(currentGame = Some(gs))
+      }
+    }
+
+  private def validateGameStateVersion(gss: GameSeriesState, gs: GameState): Either[String, Unit] =
+    gss.currentGame match {
+      case Some(currentGame) =>
+        Either.cond(
+          currentGame.version < gs.version,
+          (),
+          s"Game version ${gs.version} is too old, the current version is ${currentGame.version}"
+        )
+      case None => Right(())
+    }
 
   private[series] def applyPointRules(
       rules: Seq[PointRule],
