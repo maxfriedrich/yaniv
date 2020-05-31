@@ -72,6 +72,7 @@ object GameLogic {
         case DeckSource if gs.deck.size > 1 =>
           (gs.deck.head, Some(gs.deck.head), gs.deck.drop(1), gs.pile)
         case DeckSource => // draw the last card, re-shuffle pile into deck
+          // TODO: this should be reflected in the current game state!
           val reshuffled = Shuffle.reshuffle(gs.pile)
           (gs.deck.head, Some(gs.deck.head), reshuffled.deck, reshuffled.pile)
         case PileSource(card) =>
