@@ -95,7 +95,6 @@ object GameLogic {
   }
 
   def drawThrowCard(gs: GameState, playerId: PlayerId, card: Card): Either[String, GameState] = {
-    println(s"current player: $playerId, previous player: ${previousPlayer(gs)}")
     for {
       _                 <- validateGameState(gs, playerId, ThrowType, drawThrow = true)
       drawThrowLocation <- findDrawThrowLocation(card, gs.pile.top)

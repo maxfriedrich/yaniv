@@ -1,23 +1,10 @@
 package service
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
-import de.maxfriedrich.yaniv.game.{DeckSource, GameConfig, GameLogic, GameSeriesId, GameState}
-import de.maxfriedrich.yaniv.game.series.{GameSeriesConfig, GameSeriesLogic, GameSeriesState, PlayerInfo}
+import de.maxfriedrich.yaniv.game.{DeckSource, GameConfig, GameLogic, GameSeriesId, GameState, PlayerId}
+import de.maxfriedrich.yaniv.game.series.{GameSeriesConfig, GameSeriesLogic, GameSeriesPreStartInfo, GameSeriesState, GameSeriesStateView, PlayerInfo}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec}
 
-class GamesServiceSpec extends FlatSpec with BeforeAndAfterAll {
-
-  implicit var as: ActorSystem   = _
-  implicit var mat: Materializer = _
-
-  override protected def beforeAll(): Unit = {
-    as = ActorSystem("test")
-  }
-
-  override def afterAll(): Unit = {
-    as.terminate()
-  }
+class GamesConsistencySpec extends FlatSpec with BeforeAndAfterAll {
 
   case class DrawThrowSetup(
       gamesService: GamesStorageService,
@@ -33,7 +20,7 @@ class GamesServiceSpec extends FlatSpec with BeforeAndAfterAll {
       GameSeriesConfig.Default.copy(gameConfig = GameConfig.Default.copy(deck = eights, playerNumCards = 1))
     val id = "test"
     val s0 = GameSeriesState.empty(gsConfig, id)
-    val gs = new GamesStorageService()
+    val gs = new GamesStorageService(new NoNotify[GameSeriesId, GameSeriesPreStartInfo], new NoNotify[(GameSeriesId, PlayerId), GameSeriesStateView])
     val result = for {
       _  <- gs.create(s0)
       s1 <- GameSeriesLogic.addPlayer(s0, PlayerInfo("P1", "p1"))
