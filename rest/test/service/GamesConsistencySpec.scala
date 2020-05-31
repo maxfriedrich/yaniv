@@ -1,7 +1,14 @@
 package service
 
 import de.maxfriedrich.yaniv.game.{DeckSource, GameConfig, GameLogic, GameSeriesId, GameState, PlayerId}
-import de.maxfriedrich.yaniv.game.series.{GameSeriesConfig, GameSeriesLogic, GameSeriesPreStartInfo, GameSeriesState, GameSeriesStateView, PlayerInfo}
+import de.maxfriedrich.yaniv.game.series.{
+  GameSeriesConfig,
+  GameSeriesLogic,
+  GameSeriesPreStartInfo,
+  GameSeriesState,
+  GameSeriesStateView,
+  PlayerInfo
+}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec}
 
 class GamesConsistencySpec extends FlatSpec with BeforeAndAfterAll {
@@ -20,7 +27,10 @@ class GamesConsistencySpec extends FlatSpec with BeforeAndAfterAll {
       GameSeriesConfig.Default.copy(gameConfig = GameConfig.Default.copy(deck = eights, playerNumCards = 1))
     val id = "test"
     val s0 = GameSeriesState.empty(gsConfig, id)
-    val gs = new GamesStorageService(new NoNotify[GameSeriesId, GameSeriesPreStartInfo], new NoNotify[(GameSeriesId, PlayerId), GameSeriesStateView])
+    val gs = new GamesStorageService(
+      new NoNotify[GameSeriesId, GameSeriesPreStartInfo],
+      new NoNotify[(GameSeriesId, PlayerId), GameSeriesStateView]
+    )
     val result = for {
       _  <- gs.create(s0)
       s1 <- GameSeriesLogic.addPlayer(s0, PlayerInfo("P1", "p1"))
