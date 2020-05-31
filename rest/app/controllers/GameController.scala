@@ -3,20 +3,13 @@ package controllers
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import javax.inject.{Inject, Singleton}
-import de.maxfriedrich.yaniv.game.{Draw, DrawThrow, GameState, Throw, Yaniv}
 import play.api.http.ContentTypes
 import play.api.libs.EventSource
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, BaseController, ControllerComponents, Request, Result}
-import de.maxfriedrich.yaniv.game.series.{
-  GameIsRunning,
-  GameSeriesConfig,
-  GameSeriesLogic,
-  GameSeriesPreStartInfo,
-  GameSeriesState,
-  GameSeriesStateView,
-  PlayerInfo
-}
+
+import de.maxfriedrich.yaniv.game.{Draw, DrawThrow, Throw, Yaniv}
+import de.maxfriedrich.yaniv.game.series.{AcceptNext, GameSeriesPreStartInfo, GameSeriesStateView, Join, Remove, Start}
 import de.maxfriedrich.yaniv.game.JsonImplicits._
 import service.{GamesService, IdService}
 
@@ -32,89 +25,69 @@ class GameController @Inject() (implicit as: ActorSystem, val controllerComponen
   val idService = new IdService()
 
   def newGame() = Action {
-    val gameSeries = GameSeriesState.empty(GameSeriesConfig.Default, idService.nextId())
+    val gameSeriesId = idService.nextId()
     val result = for {
-      _ <- games.storage.create(gameSeries)
-    } yield Ok(Json.toJson(Map("id" -> gameSeries.id)))
+      _ <- games.createGameSeries(gameSeriesId)
+    } yield Ok(Json.toJson(Map("id" -> gameSeriesId)))
     resultOrError(result)
   }
 
   def join(gameSeriesId: String) = Action { request =>
+    val playerId = idService.nextId()
     val result = for {
-      gameSeriesState <- games.storage.getGameSeriesState(gameSeriesId)
-      payload         <- requestJson[JoinGameClientResponse](request)
-      info = PlayerInfo(id = idService.nextId(), name = payload.name)
-      newSeriesState <- GameSeriesLogic.addPlayer(gameSeriesState, info)
-      _              <- games.storage.update(gameSeriesId, newSeriesState)
-    } yield Ok(Json.toJson(Map("id" -> info.id)))
+      payload <- requestJson[JoinGameClientResponse](request)
+      _       <- games.gameSeriesAction(gameSeriesId, Join(playerId, payload.name))
+    } yield Ok(Json.toJson(Map("id" -> playerId)))
     resultOrError(result)
   }
 
-  def remove(gameSeriesId: String, playerId: String) = Action {
+  def remove(gameSeriesId: String, playerToRemove: String) = Action {
     val result = for {
-      gameSeriesState <- games.storage.getGameSeriesState(gameSeriesId)
-      newSeriesState  <- GameSeriesLogic.removePlayer(gameSeriesState, playerId)
-      _               <- games.storage.update(gameSeriesId, newSeriesState)
+      _ <- games.gameSeriesAction(gameSeriesId, Remove(playerToRemove))
     } yield Ok(Json.toJson(Map("ok" -> "ok")))
-    resultOrError(result)
-  }
-
-  def preStartInfo(gameSeriesId: String) = Action {
-    val result = for {
-      stateView <- games.storage.getGameSeriesPreStartInfo(gameSeriesId)
-    } yield Ok(Json.toJson(stateView))
-    resultOrError(result)
-  }
-
-  def preStartInfoStream(gameSeriesId: String) = Action {
-    val result = for {
-      stream <- games.storage.getGameSeriesPreStartInfoStream(gameSeriesId)
-    } yield sseStream[GameSeriesPreStartInfo](stream)
     resultOrError(result)
   }
 
   def start(gameSeriesId: String) = Action {
     val result = for {
-      gameSeriesState <- games.storage.getGameSeriesState(gameSeriesId)
-      newSeriesState  <- GameSeriesLogic.startSeries(gameSeriesState)
-      _               <- games.storage.update(gameSeriesId, newSeriesState)
+      _ <- games.gameSeriesAction(gameSeriesId, Start)
     } yield Ok(Json.toJson(Map("ok" -> "ok")))
     resultOrError(result)
   }
 
   def next(gameSeriesId: String, playerId: String) = Action {
     val result = for {
-      gameSeriesState <- games.storage.getGameSeriesState(gameSeriesId)
-      newSeriesState  <- GameSeriesLogic.acceptGameEnding(gameSeriesState, playerId)
-      _               <- games.storage.update(gameSeriesId, newSeriesState)
+      _ <- games.gameSeriesAction(gameSeriesId, AcceptNext(playerId))
     } yield Ok(Json.toJson(Map("ok" -> "ok")))
+    resultOrError(result)
+  }
+
+  def preStartInfo(gameSeriesId: String) = Action {
+    val result = for {
+      stateView <- games.getGameSeriesPreStartInfo(gameSeriesId)
+    } yield Ok(Json.toJson(stateView))
+    resultOrError(result)
+  }
+
+  def preStartInfoStream(gameSeriesId: String) = Action {
+    val result = for {
+      stream <- games.getGameSeriesPreStartInfoStream(gameSeriesId)
+    } yield sseStream[GameSeriesPreStartInfo](stream)
     resultOrError(result)
   }
 
   def state(gameSeriesId: String, playerId: String) = Action {
     val result = for {
-      stateView <- games.storage.getGameSeriesStateView(gameSeriesId, playerId)
+      stateView <- games.getGameSeriesStateView(gameSeriesId, playerId)
     } yield Ok(Json.toJson(stateView))
     resultOrError(result)
   }
 
   def stateStream(gameSeriesId: String, playerId: String) = Action {
     val result = for {
-      stream <- games.storage.getGameSeriesStateStream(gameSeriesId, playerId)
+      stream <- games.getGameSeriesStateStream(gameSeriesId, playerId)
     } yield sseStream[GameSeriesStateView](stream)
     resultOrError(result)
-  }
-
-  def testStream() = Action {
-    import java.time.ZonedDateTime
-    import java.time.format.DateTimeFormatter
-    import scala.concurrent.duration._
-    import scala.language.postfixOps
-
-    val df: DateTimeFormatter = DateTimeFormatter.ofPattern("HH mm ss")
-    val tickSource            = Source.tick(0 millis, 500 millis, "TICK")
-    val source                = tickSource.map(_ => "data:" + df.format(ZonedDateTime.now()) + "\n\n")
-    Ok.chunked(source via EventSource.flow).as(ContentTypes.EVENT_STREAM).withHeaders("Cache-Control" -> "no-transform")
   }
 
   def gameAction(gameSeriesId: String, playerId: String, action: String) = Action { request =>
@@ -125,7 +98,7 @@ class GameController @Inject() (implicit as: ActorSystem, val controllerComponen
         case "drawThrow" => requestJson[DrawThrow](request)
         case "yaniv"     => Right(Yaniv)
       }
-      result <- games.action(gameSeriesId, playerId, act)
+      result <- games.gameAction(gameSeriesId, playerId, act)
     } yield Ok(Json.toJson(result))
     resultOrError(result)
   }

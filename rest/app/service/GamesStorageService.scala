@@ -85,10 +85,8 @@ class GamesStorageService(implicit as: ActorSystem, mat: Materializer) {
         )
       } yield {
         gameSeriesStates += gameSeriesId -> (series :+ gameSeriesState)
-        println("Sending pre-game start info update")
         preGameConnectionManager ! Update(gameSeriesId, GameSeriesPreStartInfo.fromGameSeriesState(gameSeriesState))
         gameSeriesState.players.foreach { p =>
-          println(s"Sending update to ${p.id}")
           inGameConnectionManager ! Update(
             (gameSeriesId, p.id),
             GameSeriesStateView.fromGameSeriesState(gameSeriesState, p.id)

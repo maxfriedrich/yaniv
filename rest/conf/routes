@@ -1,19 +1,19 @@
-# POST    /series/new                                 controllers.SeriesController.new
-# POST    /series/:seriesId/                          controllers.SeriesControllers.join(seriesId: String)
-
 POST    /rest/game/new                                          controllers.GameController.newGame()
+
 GET     /rest/game/:gameSeriesId/preStartInfo                   controllers.GameController.preStartInfo(gameSeriesId: String)
 GET     /rest/game/:gameSeriesId/preStartInfo/stream            controllers.GameController.preStartInfoStream(gameSeriesId: String)
+
 POST    /rest/game/:gameSeriesId/join                           controllers.GameController.join(gameSeriesId: String)
-POST    /rest/game/:gameSeriesId/remove/:playerId               controllers.GameController.remove(gameSeriesId: String, playerId: String)
+POST    /rest/game/:gameSeriesId/remove/:playerToRemove         controllers.GameController.remove(gameSeriesId: String, playerToRemove: String)
 POST    /rest/game/:gameSeriesId/start                          controllers.GameController.start(gameSeriesId: String)
+POST    /rest/game/:gameSeriesId/player/:playerId/next          controllers.GameController.next(gameSeriesId: String, playerId: String)
 
 GET     /rest/game/:gameSeriesId/player/:playerId/state         controllers.GameController.state(gameSeriesId: String, playerId: String)
 GET     /rest/game/:gameSeriesId/player/:playerId/state/stream  controllers.GameController.stateStream(gameSeriesId: String, playerId: String)
-POST    /rest/game/:gameSeriesId/player/:playerId/next          controllers.GameController.next(gameSeriesId: String, playerId: String)
+
 POST    /rest/game/:gameSeriesId/player/:playerId/:action       controllers.GameController.gameAction(gameSeriesId: String, playerId: String, action: String)
 
-GET     /rest/test-stream                                       controllers.GameController.testStream()
+GET     /rest/test-stream                                       controllers.TestStreamController.testStream()
 
 GET     /*file                                                  controllers.FrontendController.assetOrDefault(file)
 GET     /                                                       controllers.FrontendController.index()
