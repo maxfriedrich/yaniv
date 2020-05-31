@@ -24,8 +24,8 @@ object DummyGame {
               PlayerCards("p2", shuffled.playerCards(1), None)
             ),
             currentPlayer = "p1",
-            nextAction = Throw,
-            lastAction = Started,
+            nextAction = ThrowType,
+            lastAction = None,
             pile = shuffled.pile,
             deck = shuffled.deck,
             ending = None
@@ -73,8 +73,8 @@ object DummyGame {
               PlayerCards("p2", shuffled.playerCards(1), None)
             ),
             currentPlayer = "p1",
-            nextAction = Throw,
-            lastAction = Started,
+            nextAction = ThrowType,
+            lastAction = None,
             pile = shuffled.pile,
             deck = shuffled.deck,
             ending = Some(GameResult(Yaniv("p1", 2), Map("p1" -> 2, "p2" -> 4)))
@@ -124,8 +124,8 @@ object DummyGame {
             config = config.gameConfig,
             players = Seq(PlayerCards("p1", shuffled.playerCards.head, None)),
             currentPlayer = "p1",
-            nextAction = Throw,
-            lastAction = DrawThrown(Card.fromString("H6").get),
+            nextAction = ThrowType,
+            lastAction = Some(DrawThrow(Card.fromString("H6").get)),
             pile = shuffled.pile,
             deck = shuffled.deck,
             ending = None
@@ -156,8 +156,8 @@ object DummyGame {
               PlayerCards("p2", shuffled.playerCards(1), None)
             ),
             currentPlayer = "p1",
-            nextAction = Throw,
-            lastAction = Drawn(DeckSource),
+            nextAction = ThrowType,
+            lastAction = Some(Draw(DeckSource)),
             pile = shuffled.pile,
             deck = shuffled.deck,
             ending = Some(GameResult(Yaniv("p1", 2), Map("p1" -> 2, "p2" -> 4)))

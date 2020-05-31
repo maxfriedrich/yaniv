@@ -26,7 +26,6 @@ object GameSeriesLogic {
 
   def isDrawThrowTimingAccepted(gss: GameSeriesState): Boolean = {
     val timeDiff = Duration.between(gss.timestamp, LocalDateTime.now()).toMillis
-    println(s"timeDiff: $timeDiff")
     timeDiff < gss.config.drawThrowMillis
   }
 
