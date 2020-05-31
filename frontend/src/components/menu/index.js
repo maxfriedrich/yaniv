@@ -192,6 +192,20 @@ export class Menu extends Component {
       .catch(err => this.flash(err));
   };
 
+  addAI = () => {
+    console.log('add AI');
+    fetch(`/rest/game/${this.props.gameId}/addAI`, {
+      method: 'POST'
+    })
+      .then(response => response.json())
+      .then(data => {
+        if ('error' in data) {
+          this.flash(data.error);
+        }
+      })
+      .catch(err => this.flash(err));
+  };
+
   render = ({ gameId, playerId, debug }, { players, name, flash }) => (
     <div>
       <Flash text={flash} dismissAction={this.dismissFlash} />
@@ -204,6 +218,7 @@ export class Menu extends Component {
             buttonTitle="Start Game"
             action={this.startGame}
             removePlayer={this.removePlayer}
+            addAI={this.addAI}
             onShareError={this.flash}
           />
         ) : (
