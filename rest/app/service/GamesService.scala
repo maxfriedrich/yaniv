@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext
 class GamesService(implicit as: ActorSystem, mat: Materializer) {
   import GamesService._
 
-  val storage = new GamesStorageService()
+  private val storage = new GamesStorageService(new NotifyPreGame(), new NotifyInGame())
 
   def createGameSeries(
       gameSeriesId: GameSeriesId,

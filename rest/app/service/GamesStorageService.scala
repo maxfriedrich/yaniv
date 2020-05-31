@@ -1,8 +1,5 @@
 package service
 
-import akka.Done
-import akka.actor.{ActorRef, ActorSystem}
-import akka.stream.{CompletionStrategy, Materializer, OverflowStrategy}
 import akka.stream.scaladsl.Source
 import de.maxfriedrich.yaniv.game.series.{
   GameSeriesPreStartInfo,
@@ -12,26 +9,22 @@ import de.maxfriedrich.yaniv.game.series.{
   WaitingForSeriesStart
 }
 import de.maxfriedrich.yaniv.game.{DummyGame, GameSeriesId, PlayerId}
-import service.ConnectionManager.{Register, Unregister, Update}
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 
-class GamesStorageService(implicit as: ActorSystem, mat: Materializer) {
+class GamesStorageService(
+    notifyPreGame: Notify[GameSeriesId, GameSeriesPreStartInfo],
+    notifyInGame: Notify[(GameSeriesId, PlayerId), GameSeriesStateView]
+) {
 
-  import GamesStorageService._
-
-  val gameSeriesStates = mutable.Map.empty[GameSeriesId, mutable.Buffer[GameSeriesState]]
+  private val gameSeriesStates = mutable.Map.empty[GameSeriesId, mutable.Buffer[GameSeriesState]]
   gameSeriesStates += DummyGame.dummyGame
   gameSeriesStates += DummyGame.drawThrowTest
   gameSeriesStates += DummyGame.betweenGames
   gameSeriesStates += DummyGame.fiveCardsOnPile
   gameSeriesStates += DummyGame.gameOver
   gameSeriesStates += DummyGame.singleCards
-
-  val preGameConnectionManager: ActorRef = as.actorOf(ConnectionManager.props[GameSeriesId, GameSeriesPreStartInfo])
-  val inGameConnectionManager: ActorRef =
-    as.actorOf(ConnectionManager.props[(GameSeriesId, PlayerId), GameSeriesStateView])
 
   def getGameSeriesPreStartInfo(gameSeriesId: GameSeriesId): Either[String, GameSeriesPreStartInfo] =
     for {
@@ -55,7 +48,7 @@ class GamesStorageService(implicit as: ActorSystem, mat: Materializer) {
     for {
       series <- validateGameSeries(gameSeriesId)
       _      <- validateGamePlayer(series, playerId)
-    } yield newSourceActor(inGameConnectionManager, (gameSeriesId, playerId))
+    } yield notifyInGame.signUp((gameSeriesId, playerId))
 
   def getGameSeriesPreStartInfoStream(
       gameSeriesId: GameSeriesId
@@ -63,7 +56,7 @@ class GamesStorageService(implicit as: ActorSystem, mat: Materializer) {
     for {
       series <- validateGameSeries(gameSeriesId)
       _ = Either.cond(series.last.state == WaitingForSeriesStart, (), s"Game $gameSeriesId has already started")
-    } yield newSourceActor(preGameConnectionManager, gameSeriesId)
+    } yield notifyPreGame.signUp(gameSeriesId)
 
   def create(initialState: GameSeriesState): Either[String, Unit] = {
     val gameSeriesId = initialState.id
@@ -85,11 +78,11 @@ class GamesStorageService(implicit as: ActorSystem, mat: Materializer) {
         )
       } yield {
         gameSeriesStates += gameSeriesId -> (series :+ gameSeriesState)
-        preGameConnectionManager ! Update(gameSeriesId, GameSeriesPreStartInfo.fromGameSeriesState(gameSeriesState))
-        gameSeriesState.players.foreach { p =>
-          inGameConnectionManager ! Update(
-            (gameSeriesId, p.id),
-            GameSeriesStateView.fromGameSeriesState(gameSeriesState, p.id)
+        notifyPreGame.sendUpdate(gameSeriesId, GameSeriesPreStartInfo.fromGameSeriesState(gameSeriesState))
+        gameSeriesState.players.foreach { player =>
+          notifyInGame.sendUpdate(
+            (gameSeriesId, player.id),
+            GameSeriesStateView.fromGameSeriesState(gameSeriesState, player.id)
           )
         }
       }
@@ -110,26 +103,4 @@ class GamesStorageService(implicit as: ActorSystem, mat: Materializer) {
       case Some(playerInfo) => Right(playerInfo)
       case _                => Left(s"Player $playerId is not a part of game ${gameSeries.last.id}")
     }
-}
-
-object GamesStorageService {
-  private def newSourceActor[K, V](connectionManager: ActorRef, key: K)(
-      implicit ec: ExecutionContext
-  ): Source[V, ActorRef] = {
-    Source
-      .actorRef(
-        completionMatcher = {
-          case Done => CompletionStrategy.immediately
-        },
-        failureMatcher = PartialFunction.empty,
-        bufferSize = 32,
-        overflowStrategy = OverflowStrategy.dropHead
-      )
-      .watchTermination() {
-        case (actorRef: ActorRef, terminate) =>
-          connectionManager ! Register(key, actorRef)
-          terminate.onComplete(_ => connectionManager ! Unregister(key, actorRef))
-          actorRef
-      }
-  }
 }
