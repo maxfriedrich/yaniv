@@ -1,137 +1,100 @@
 package service
 
-import akka.Done
-import akka.actor.{ActorRef, ActorSystem}
-import akka.stream.{CompletionStrategy, Materializer, OverflowStrategy}
+import akka.actor.ActorSystem
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
-import de.maxfriedrich.yaniv.game.series.{
-  GameSeriesPreStartInfo,
-  GameSeriesState,
-  GameSeriesStateView,
-  PlayerInfo,
-  WaitingForSeriesStart
-}
-import de.maxfriedrich.yaniv.game.{DummyGame, GameSeriesId, PlayerId}
-import service.ConnectionManager.{Register, Unregister, Update}
+import de.maxfriedrich.yaniv.game.series._
+import de.maxfriedrich.yaniv.game._
 
-import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 
 class GamesService(implicit as: ActorSystem, mat: Materializer) {
-
   import GamesService._
 
-  val gameSeriesStates = mutable.Map.empty[GameSeriesId, mutable.Buffer[GameSeriesState]]
-  gameSeriesStates += DummyGame.dummyGame
-  gameSeriesStates += DummyGame.drawThrowTest
-  gameSeriesStates += DummyGame.betweenGames
-  gameSeriesStates += DummyGame.fiveCardsOnPile
-  gameSeriesStates += DummyGame.gameOver
-  gameSeriesStates += DummyGame.singleCards
+  private val storage = new GamesStorageService(new NotifyPreGame(), new NotifyInGame())
 
-  val preGameConnectionManager: ActorRef = as.actorOf(ConnectionManager.props[GameSeriesId, GameSeriesPreStartInfo])
-  val inGameConnectionManager: ActorRef =
-    as.actorOf(ConnectionManager.props[(GameSeriesId, PlayerId), GameSeriesStateView])
-
-  def getGameSeriesPreStartInfo(gameSeriesId: GameSeriesId): Either[String, GameSeriesPreStartInfo] =
+  def createGameSeries(
+      gameSeriesId: GameSeriesId,
+      config: GameSeriesConfig = GameSeriesConfig.Default
+  ): Either[String, Unit] =
     for {
-      series <- validateGameSeries(gameSeriesId)
-    } yield GameSeriesPreStartInfo.fromGameSeriesState(series.last)
+      _ <- storage.create(GameSeriesState.empty(config, gameSeriesId))
+    } yield ()
+
+  def gameSeriesAction(gameSeriesId: GameSeriesId, action: GameSeriesAction): Either[String, Unit] =
+    for {
+      gameSeriesState <- storage.getGameSeriesState(gameSeriesId)
+      newSeriesState  <- performGameSeriesAction(gameSeriesState, action)
+      _               <- storage.update(gameSeriesId, newSeriesState)
+    } yield ()
+
+  def gameAction(
+      gameSeriesId: GameSeriesId,
+      playerId: PlayerId,
+      action: GameAction
+  ): Either[String, GameSeriesStateView] =
+    for {
+      gameSeriesState <- storage.getGameSeriesState(gameSeriesId)
+      gameState       <- getGameState(gameSeriesState)
+      newGameState    <- performGameAction(gameSeriesState, gameState, playerId, action)
+      newSeriesState  <- GameSeriesLogic.updateGameState(gameSeriesState, newGameState)
+      _               <- storage.update(gameSeriesId, newSeriesState)
+      gameStateView   <- storage.getGameSeriesStateView(gameSeriesId, playerId)
+    } yield gameStateView
+
+  // TODO: not very nice to forward these, maybe it should be a mixin trait
+  def getGameSeriesPreStartInfo(gameSeriesId: GameSeriesId): Either[String, GameSeriesPreStartInfo] =
+    storage.getGameSeriesPreStartInfo(gameSeriesId)
 
   def getGameSeriesState(gameSeriesId: GameSeriesId): Either[String, GameSeriesState] =
-    for {
-      series <- validateGameSeries(gameSeriesId)
-    } yield series.last
+    storage.getGameSeriesState(gameSeriesId)
 
   def getGameSeriesStateView(gameSeriesId: GameSeriesId, playerId: PlayerId): Either[String, GameSeriesStateView] =
-    for {
-      series <- validateGameSeries(gameSeriesId)
-      _      <- validateGamePlayer(series, playerId)
-    } yield GameSeriesStateView.fromGameSeriesState(series.last, playerId)
+    storage.getGameSeriesStateView(gameSeriesId, playerId)
 
   def getGameSeriesStateStream(gameSeriesId: GameSeriesId, playerId: PlayerId)(
       implicit ec: ExecutionContext
   ): Either[String, Source[GameSeriesStateView, _]] =
-    for {
-      series <- validateGameSeries(gameSeriesId)
-      _      <- validateGamePlayer(series, playerId)
-    } yield newSourceActor(inGameConnectionManager, (gameSeriesId, playerId))
+    storage.getGameSeriesStateStream(gameSeriesId, playerId)
 
   def getGameSeriesPreStartInfoStream(
       gameSeriesId: GameSeriesId
   )(implicit ec: ExecutionContext): Either[String, Source[GameSeriesPreStartInfo, _]] =
-    for {
-      series <- validateGameSeries(gameSeriesId)
-      _ = Either.cond(series.last.state == WaitingForSeriesStart, (), s"Game $gameSeriesId has already started")
-    } yield newSourceActor(preGameConnectionManager, gameSeriesId)
-
-  def create(initialState: GameSeriesState): Either[String, Unit] = {
-    val gameSeriesId = initialState.id
-    for {
-      _ <- Either.cond(!gameSeriesStates.contains(gameSeriesId), (), s"Game $gameSeriesId already exists")
-    } yield {
-      gameSeriesStates += gameSeriesId -> mutable.Buffer(initialState)
-    }
-  }
-
-  def update(gameSeriesId: GameSeriesId, gameSeriesState: GameSeriesState): Either[String, Unit] = {
-    synchronized {
-      for {
-        series <- validateGameSeries(gameSeriesId)
-        _ <- Either.cond(
-          gameSeriesState.version > series.last.version,
-          (),
-          s"Game state version ${gameSeriesState.version} is too old, the current version is ${series.last.version}"
-        )
-      } yield {
-        gameSeriesStates += gameSeriesId -> (series :+ gameSeriesState)
-        println("Sending pre-game start info update")
-        preGameConnectionManager ! Update(gameSeriesId, GameSeriesPreStartInfo.fromGameSeriesState(gameSeriesState))
-        gameSeriesState.players.foreach { p =>
-          println(s"Sending update to ${p.id}")
-          inGameConnectionManager ! Update(
-            (gameSeriesId, p.id),
-            GameSeriesStateView.fromGameSeriesState(gameSeriesState, p.id)
-          )
-        }
-      }
-    }
-  }
-
-  private def validateGameSeries(gameSeriesId: GameSeriesId): Either[String, mutable.Buffer[GameSeriesState]] =
-    gameSeriesStates.get(gameSeriesId) match {
-      case Some(states) if states.nonEmpty => Right(states)
-      case _                               => Left(s"Game series $gameSeriesId does not exist")
-    }
-
-  private def validateGamePlayer(
-      gameSeries: mutable.Buffer[GameSeriesState],
-      playerId: PlayerId
-  ): Either[String, PlayerInfo] =
-    gameSeries.last.players.find(_.id == playerId) match {
-      case Some(playerInfo) => Right(playerInfo)
-      case _                => Left(s"Player $playerId is not a part of game ${gameSeries.last.id}")
-    }
+    storage.getGameSeriesPreStartInfoStream(gameSeriesId)
 }
 
 object GamesService {
-  private def newSourceActor[K, V](connectionManager: ActorRef, key: K)(
-      implicit ec: ExecutionContext
-  ): Source[V, ActorRef] = {
-    Source
-      .actorRef(
-        completionMatcher = {
-          case Done => CompletionStrategy.immediately
-        },
-        failureMatcher = PartialFunction.empty,
-        bufferSize = 32,
-        overflowStrategy = OverflowStrategy.dropHead
-      )
-      .watchTermination() {
-        case (actorRef: ActorRef, terminate) =>
-          connectionManager ! Register(key, actorRef)
-          terminate.onComplete(_ => connectionManager ! Unregister(key, actorRef))
-          actorRef
-      }
+  def getGameState(gameSeriesState: GameSeriesState): Either[String, GameState] = {
+    (gameSeriesState.state, gameSeriesState.currentGame) match {
+      case (GameIsRunning, Some(gs)) => Right(gs)
+      case (noCurrentGame, _)        => Left(s"There is no current game: ${noCurrentGame.toString}")
+    }
+  }
+
+  def performGameAction(
+      gameSeriesState: GameSeriesState,
+      gameState: GameState,
+      playerId: PlayerId,
+      action: GameAction
+  ): Either[String, GameState] = action match {
+    case d: Draw  => GameLogic.drawCard(gameState, playerId, d.source)
+    case t: Throw => GameLogic.throwCards(gameState, playerId, t.cards)
+    case dt: DrawThrow =>
+      for {
+        _ <- Either
+          .cond(GameSeriesLogic.isDrawThrowTimingAccepted(gameSeriesState), (), "Draw-throw timing not accepted")
+        s <- GameLogic.drawThrowCard(gameState, playerId, dt.card)
+      } yield s
+    case Yaniv => GameLogic.callYaniv(gameState, playerId)
+  }
+
+  def performGameSeriesAction(
+      gameSeriesState: GameSeriesState,
+      action: GameSeriesAction
+  ): Either[String, GameSeriesState] = action match {
+    case j: Join       => GameSeriesLogic.addPlayer(gameSeriesState, PlayerInfo(j.playerId, j.name))
+    case r: Remove     => GameSeriesLogic.removePlayer(gameSeriesState, r.playerToRemove)
+    case Start         => GameSeriesLogic.startSeries(gameSeriesState)
+    case a: AcceptNext => GameSeriesLogic.acceptGameEnding(gameSeriesState, a.playerId)
   }
 }

@@ -16,10 +16,16 @@ case object WaitingForSeriesStart                                     extends Hi
 case class WaitingForNextGame(acceptedPlayers: Set[PlayerId])         extends HighLevelState with WaitingForNext
 case class GameOver(winner: PlayerId, acceptedPlayers: Set[PlayerId]) extends HighLevelState with WaitingForNext
 
+sealed trait GameSeriesAction
+case class Join(playerId: PlayerId, name: String) extends GameSeriesAction
+case class Remove(playerToRemove: PlayerId)       extends GameSeriesAction
+case object Start                                 extends GameSeriesAction
+case class AcceptNext(playerId: PlayerId)         extends GameSeriesAction
+
 case class GameSeriesState(
     config: GameSeriesConfig,
     id: GameSeriesId,
-    version: Int,
+    version: Int = 0,
     players: Seq[PlayerInfo],
     state: HighLevelState,
     currentGame: Option[GameState],
@@ -30,6 +36,7 @@ case class GameSeriesState(
   val timestamp: LocalDateTime = java.time.LocalDateTime.now
 
   // copy forcing a version update but dumb otherwise (use GameSeriesLogic methods instead!)
+  // TODO: not very nice to mix logic into the case class :/
   private[series] def copy(
       config: GameSeriesConfig = config,
       players: Seq[PlayerInfo] = players,

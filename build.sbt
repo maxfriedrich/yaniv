@@ -19,7 +19,8 @@ lazy val rest = (project in file("rest"))
   .settings(name := "yaniv-rest")
   .enablePlugins(PlayScala)
   .settings(
-    libraryDependencies += guice
+    libraryDependencies += guice,
+    libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
   )
   .dependsOn(game)
 

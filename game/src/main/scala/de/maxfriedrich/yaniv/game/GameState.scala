@@ -2,15 +2,15 @@ package de.maxfriedrich.yaniv.game
 
 import de.maxfriedrich.yaniv.game.series.PlayerInfo
 
-sealed trait GameAction
-case object Throw extends GameAction
-case object Draw  extends GameAction
+sealed trait GameActionType
+case object ThrowType extends GameActionType
+case object DrawType  extends GameActionType
 
-sealed trait LastGameAction
-case object Started                  extends LastGameAction
-case class Drawn(source: DrawSource) extends LastGameAction
-case class Thrown(cards: Seq[Card])  extends LastGameAction
-case class DrawThrown(card: Card)    extends LastGameAction
+sealed trait GameAction
+case class Draw(source: DrawSource) extends GameAction
+case class Throw(cards: Seq[Card])  extends GameAction
+case class DrawThrow(card: Card)    extends GameAction
+case object Yaniv                   extends GameAction
 
 case class PlayerCards(id: PlayerId, cards: Seq[Card], drawThrowable: Option[Card])
 
@@ -29,14 +29,39 @@ case class GameResult(ending: GameEnding, points: Map[PlayerId, Int])
 
 case class GameState(
     config: GameConfig,
+    version: Int = 0,
     players: Seq[PlayerCards],
     currentPlayer: PlayerId,
-    nextAction: GameAction,
-    lastAction: LastGameAction,
+    nextAction: GameActionType,
+    lastAction: Option[GameAction],
     pile: Pile,
     deck: Seq[Card],
     ending: Option[GameResult]
-)
+) {
+  // copy forcing a version update but dumb otherwise (use GameLogic methods instead!)
+  // TODO: not very nice to mix logic into the case class :/
+  private[game] def copy(
+      players: Seq[PlayerCards] = players,
+      currentPlayer: PlayerId = currentPlayer,
+      nextAction: GameActionType = nextAction,
+      lastAction: Option[GameAction] = lastAction,
+      pile: Pile = pile,
+      deck: Seq[Card] = deck,
+      ending: Option[GameResult] = ending
+  ): GameState =
+    GameState(
+      config = config,
+      version = version + 1,
+      players = players,
+      currentPlayer = currentPlayer,
+      nextAction = nextAction,
+      lastAction = lastAction,
+      pile = pile,
+      deck = deck,
+      ending = ending
+    )
+
+}
 
 object GameState {
   def newGame(config: GameConfig, players: Seq[PlayerInfo], startingPlayer: Option[PlayerId] = None): GameState = {
@@ -47,8 +72,8 @@ object GameState {
         case (player, cards) => PlayerCards(id = player.id, cards = cards, drawThrowable = None)
       },
       currentPlayer = startingPlayer.getOrElse(players.head.id),
-      nextAction = Throw,
-      lastAction = Started,
+      nextAction = ThrowType,
+      lastAction = None,
       pile = shuffled.pile,
       deck = shuffled.deck,
       ending = None
