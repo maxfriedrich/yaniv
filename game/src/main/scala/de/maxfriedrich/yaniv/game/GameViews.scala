@@ -13,7 +13,7 @@ case class GameStateView(
     playerOrder: Seq[PlayerId],
     currentPlayer: PlayerId,
     nextAction: GameActionType,
-    lastAction: GameAction,
+    lastAction: Option[GameAction],
     pile: PileView,
     deck: Int,
     ending: Option[GameResult]

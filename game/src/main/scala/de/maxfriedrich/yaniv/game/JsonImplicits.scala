@@ -69,7 +69,6 @@ object JsonImplicits {
 
   implicit val gameActionReads: Reads[GameAction] = Reads { json =>
     json \ "type" match {
-      case JsDefined(JsString(Strings.Started))    => JsSuccess(Start)
       case JsDefined(JsString(Strings.Drawn))      => Json.reads[Draw].reads(json)
       case JsDefined(JsString(Strings.Thrown))     => Json.reads[Throw].reads(json)
       case JsDefined(JsString(Strings.DrawThrown)) => Json.reads[DrawThrow].reads(json)
@@ -79,7 +78,6 @@ object JsonImplicits {
   }
 
   implicit val gameActionWrites: Writes[GameAction] = Writes {
-    case Start           => Json.writes[JsonStarted].writes(JsonStarted(Strings.Started))
     case Draw(source)    => Json.writes[JsonDrawn].writes(JsonDrawn(Strings.Drawn, source))
     case Throw(cards)    => Json.writes[JsonThrown].writes(JsonThrown(Strings.Thrown, cards))
     case DrawThrow(card) => Json.writes[JsonDrawThrown].writes(JsonDrawThrown(Strings.DrawThrown, card))
