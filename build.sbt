@@ -22,7 +22,7 @@ lazy val rest = (project in file("rest"))
     libraryDependencies += guice,
     libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
   )
-  .dependsOn(game)
+  .dependsOn(game, ai)
 
 lazy val root = (project in file("."))
   .aggregate(game, ai, rest)
