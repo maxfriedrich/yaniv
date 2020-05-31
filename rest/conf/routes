@@ -4,6 +4,7 @@ GET     /rest/game/:gameSeriesId/preStartInfo                   controllers.Game
 GET     /rest/game/:gameSeriesId/preStartInfo/stream            controllers.GameController.preStartInfoStream(gameSeriesId: String)
 
 POST    /rest/game/:gameSeriesId/join                           controllers.GameController.join(gameSeriesId: String)
+POST    /rest/game/:gameSeriesId/addAI                          controllers.GameController.addAI(gameSeriesId: String)
 POST    /rest/game/:gameSeriesId/remove/:playerToRemove         controllers.GameController.remove(gameSeriesId: String, playerToRemove: String)
 POST    /rest/game/:gameSeriesId/start                          controllers.GameController.start(gameSeriesId: String)
 POST    /rest/game/:gameSeriesId/player/:playerId/next          controllers.GameController.next(gameSeriesId: String, playerId: String)
