@@ -4,7 +4,10 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import de.maxfriedrich.yaniv.game.series._
-import de.maxfriedrich.yaniv.game.{GameAction, GameSeriesId, PlayerId, _}
+import de.maxfriedrich.yaniv.game._
+import de.maxfriedrich.yaniv.game.JsonImplicits._
+import play.api.Logger
+import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext
 
@@ -32,7 +35,7 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
       _               <- storage.update(gameSeriesId, newSeriesState)
     } yield action match {
       case Join(playerId, _, true) =>
-        val registered = for {
+        for {
           inGame <- getGameSeriesStateStream(gameSeriesId, playerId)
         } yield {
           new AICommunicator(
@@ -57,6 +60,7 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
       newSeriesState  <- GameSeriesLogic.updateGameState(gameSeriesState, newGameState)
       _               <- storage.update(gameSeriesId, newSeriesState)
       gameStateView   <- storage.getGameSeriesStateView(gameSeriesId, playerId)
+      _               = logger.info(Json.toJson(gameStateView).toString)
     } yield gameStateView
 
   // TODO: not very nice to forward these, maybe it should be a mixin trait
@@ -81,6 +85,8 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
 }
 
 object GamesService {
+  private val logger: Logger = Logger(this.getClass)
+
   def getGameState(gameSeriesState: GameSeriesState): Either[String, GameState] = {
     (gameSeriesState.state, gameSeriesState.currentGame) match {
       case (GameIsRunning, Some(gs)) => Right(gs)
