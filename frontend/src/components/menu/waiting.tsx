@@ -10,6 +10,7 @@ export interface WaitingProps {
   buttonTitle: string;
   action: () => void;
   removePlayer: (playerId: string) => () => void;
+  addAI: () => void;
   onShareError: (error) => void;
 }
 
@@ -32,6 +33,7 @@ export const Waiting = ({
   buttonTitle,
   action,
   removePlayer,
+  addAI,
   onShareError
 }: WaitingProps) => (
   <div class="card my-2">
@@ -65,6 +67,12 @@ export const Waiting = ({
                 onClick={webShare(joinLink, onShareError)}
               >
                 🔗 Invite Players
+              </button>
+              <button
+                  class="btn btn-outline-secondary btn-sm mr-2"
+                  onClick={addAI}
+              >
+                🤖 Add AI
               </button>
             </Fragment>
           ) : (

@@ -11,6 +11,10 @@ lazy val game = (project in file("game"))
     libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
   )
 
+lazy val ai = (project in file("ai"))
+  .settings(name := "yaniv-ai")
+  .dependsOn(game)
+
 lazy val rest = (project in file("rest"))
   .settings(name := "yaniv-rest")
   .enablePlugins(PlayScala)
@@ -18,7 +22,7 @@ lazy val rest = (project in file("rest"))
     libraryDependencies += guice,
     libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
   )
-  .dependsOn(game)
+  .dependsOn(game, ai)
 
 lazy val root = (project in file("."))
-  .aggregate(game, rest)
+  .aggregate(game, ai, rest)

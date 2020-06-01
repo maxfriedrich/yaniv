@@ -36,7 +36,15 @@ class GameController @Inject() (implicit as: ActorSystem, val controllerComponen
     val playerId = idService.nextId()
     val result = for {
       payload <- requestJson[JoinGameClientResponse](request)
-      _       <- games.gameSeriesAction(gameSeriesId, Join(playerId, payload.name))
+      _       <- games.gameSeriesAction(gameSeriesId, Join(playerId, payload.name, isAI = false))
+    } yield Ok(Json.toJson(Map("id" -> playerId)))
+    resultOrError(result)
+  }
+
+  def addAI(gameSeriesId: String) = Action { request =>
+    val playerId = idService.nextId()
+    val result = for {
+      _ <- games.gameSeriesAction(gameSeriesId, Join(playerId, "AI", isAI = true))
     } yield Ok(Json.toJson(Map("id" -> playerId)))
     resultOrError(result)
   }

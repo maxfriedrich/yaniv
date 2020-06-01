@@ -11,14 +11,11 @@ class ConnectionManager[K, V] extends Actor {
 
   private def onMessage(actors: Map[K, Set[ActorRef]]): Receive = {
     case Update(key: K, value: V) =>
-      //      println("Manager got update")
       actors.getOrElse(key, Set.empty).foreach(_ ! value)
     case Register(key: K, actorRef) =>
-      //      println("Manager got register")
       val newGamePlayerActors = actors(key) + actorRef
       context.become(onMessage(actors + (key -> newGamePlayerActors)))
     case Unregister(key: K, actorRef) =>
-      //      println("Manager got unregister")
       val newGamePlayerActors = actors(key) - actorRef
       context.become(onMessage(actors + (key -> newGamePlayerActors)))
   }

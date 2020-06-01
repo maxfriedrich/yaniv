@@ -4,14 +4,16 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import de.maxfriedrich.yaniv.game.series._
-import de.maxfriedrich.yaniv.game._
+import de.maxfriedrich.yaniv.game.{GameAction, GameSeriesId, PlayerId, _}
 
 import scala.concurrent.ExecutionContext
 
 class GamesService(implicit as: ActorSystem, mat: Materializer) {
   import GamesService._
 
-  private val storage = new GamesStorageService(new NotifyPreGame(), new NotifyInGame())
+  private val notifyPreGame = new NotifyPreGame()
+  private val notifyInGame  = new NotifyInGame()
+  private val storage       = new GamesStorageService(notifyPreGame, notifyInGame)
 
   def createGameSeries(
       gameSeriesId: GameSeriesId,
@@ -21,12 +23,27 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
       _ <- storage.create(GameSeriesState.empty(config, gameSeriesId))
     } yield ()
 
-  def gameSeriesAction(gameSeriesId: GameSeriesId, action: GameSeriesAction): Either[String, Unit] =
+  def gameSeriesAction(gameSeriesId: GameSeriesId, action: GameSeriesAction)(
+      implicit ec: ExecutionContext
+  ): Either[String, Unit] =
     for {
       gameSeriesState <- storage.getGameSeriesState(gameSeriesId)
       newSeriesState  <- performGameSeriesAction(gameSeriesState, action)
       _               <- storage.update(gameSeriesId, newSeriesState)
-    } yield ()
+    } yield action match {
+      case Join(playerId, _, true) =>
+        val registered = for {
+          inGame <- getGameSeriesStateStream(gameSeriesId, playerId)
+        } yield {
+          new AICommunicator(
+            playerId,
+            inGame,
+            gameAction(gameSeriesId, playerId, _: GameAction),
+            gameSeriesAction(gameSeriesId, _: GameSeriesAction)
+          )
+        }
+      case _ => ()
+    }
 
   def gameAction(
       gameSeriesId: GameSeriesId,
@@ -92,7 +109,7 @@ object GamesService {
       gameSeriesState: GameSeriesState,
       action: GameSeriesAction
   ): Either[String, GameSeriesState] = action match {
-    case j: Join       => GameSeriesLogic.addPlayer(gameSeriesState, PlayerInfo(j.playerId, j.name))
+    case j: Join       => GameSeriesLogic.addPlayer(gameSeriesState, PlayerInfo(j.playerId, j.name, j.isAI))
     case r: Remove     => GameSeriesLogic.removePlayer(gameSeriesState, r.playerToRemove)
     case Start         => GameSeriesLogic.startSeries(gameSeriesState)
     case a: AcceptNext => GameSeriesLogic.acceptGameEnding(gameSeriesState, a.playerId)

@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 import de.maxfriedrich.yaniv.game.{GameSeriesId, GameState, PlayerId}
 
-case class PlayerInfo(id: PlayerId, name: String)
+case class PlayerInfo(id: PlayerId, name: String, isAI: Boolean = false)
 
 sealed trait HighLevelState
 sealed trait WaitingForNext {
@@ -17,10 +17,10 @@ case class WaitingForNextGame(acceptedPlayers: Set[PlayerId])         extends Hi
 case class GameOver(winner: PlayerId, acceptedPlayers: Set[PlayerId]) extends HighLevelState with WaitingForNext
 
 sealed trait GameSeriesAction
-case class Join(playerId: PlayerId, name: String) extends GameSeriesAction
-case class Remove(playerToRemove: PlayerId)       extends GameSeriesAction
-case object Start                                 extends GameSeriesAction
-case class AcceptNext(playerId: PlayerId)         extends GameSeriesAction
+case class Join(playerId: PlayerId, name: String, isAI: Boolean) extends GameSeriesAction
+case class Remove(playerToRemove: PlayerId)                      extends GameSeriesAction
+case object Start                                                extends GameSeriesAction
+case class AcceptNext(playerId: PlayerId)                        extends GameSeriesAction
 
 case class GameSeriesState(
     config: GameSeriesConfig,
