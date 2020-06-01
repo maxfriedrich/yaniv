@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import de.maxfriedrich.yaniv.game.series._
-import de.maxfriedrich.yaniv.game._
+import de.maxfriedrich.yaniv.game.{GameAction, GameSeriesId, PlayerId, _}
 
 import scala.concurrent.ExecutionContext
 
@@ -33,13 +33,15 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
     } yield action match {
       case Join(playerId, _, true) =>
         val registered = for {
-          preGame <- getGameSeriesPreStartInfoStream(gameSeriesId)
-          inGame  <- getGameSeriesStateStream(gameSeriesId, playerId)
+          inGame <- getGameSeriesStateStream(gameSeriesId, playerId)
         } yield {
-          new AICommunicator(playerId, inGame, gameAction, gameSeriesAction)
-          println(s"Added ai communicator $preGame, $inGame")
+          new AICommunicator(
+            playerId,
+            inGame,
+            gameAction(gameSeriesId, playerId, _: GameAction),
+            gameSeriesAction(gameSeriesId, _: GameSeriesAction)
+          )
         }
-        if (registered.isLeft) println(registered)
       case _ => ()
     }
 
