@@ -60,7 +60,7 @@ class GamesService(implicit as: ActorSystem, mat: Materializer) {
       newSeriesState  <- GameSeriesLogic.updateGameState(gameSeriesState, newGameState)
       _               <- storage.update(gameSeriesId, newSeriesState)
       gameStateView   <- storage.getGameSeriesStateView(gameSeriesId, playerId)
-      _               = logger.info(Json.toJson(gameStateView).toString)
+      _ = logger.info(Json.toJson(gameStateView).toString)
     } yield gameStateView
 
   // TODO: not very nice to forward these, maybe it should be a mixin trait
