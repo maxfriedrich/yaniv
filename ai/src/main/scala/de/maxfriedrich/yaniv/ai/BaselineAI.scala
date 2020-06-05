@@ -6,8 +6,8 @@ import de.maxfriedrich.yaniv.game.{
   Draw,
   DrawType,
   GameAction,
-  GameLogic,
   GameStateView,
+  PileSource,
   Throw,
   ThrowType,
   Yaniv
@@ -30,19 +30,20 @@ object BaselineAI {
     if (myCards.map(_.endValue).sum <= 3)
       Yaniv
     else {
-      Throw(findBestCombination(myCards))
+      Throw(AILogic.bestCombination(myCards))
     }
   }
 
   def playDraw(gameStateView: GameStateView): GameAction = {
-    Draw(DeckSource)
+    cardToDrawFromPile(gameStateView.me.cards, gameStateView.pile.drawable.map(_.card)) match {
+      case Some(card) => Draw(PileSource(card))
+      case _          => Draw(DeckSource)
+    }
   }
 
-  def findBestCombination(cards: Seq[Card]): Seq[Card] = {
-    val combinations = (1 to 5).foldLeft(Iterator(Seq.empty[Card])) {
-      case (acc, n) =>
-        acc ++ cards.combinations(n)
+  def cardToDrawFromPile(cards: Seq[Card], drawableCards: Seq[Card]): Option[Card] = {
+    AILogic.combinationsWithDrawable(cards, drawableCards).collectFirst {
+      case (drawable, combination) => drawable
     }
-    combinations.maxBy { cards => if (GameLogic.isValidCombination(cards)) cards.map(_.endValue).sum else 0 }
   }
 }
