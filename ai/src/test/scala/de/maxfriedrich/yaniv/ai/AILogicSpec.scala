@@ -1,10 +1,9 @@
 package de.maxfriedrich.yaniv.ai
 
 import org.scalatest.FlatSpec
-import de.maxfriedrich.yaniv.game.CardsHelper.C
+import CardsHelper.C
 
 class AILogicSpec extends FlatSpec {
-
   val h5    = C("H5")
   val h3    = C("H3")
   val d4    = C("D4")

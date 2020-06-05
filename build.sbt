@@ -8,13 +8,13 @@ lazy val game = (project in file("game"))
   .settings(name := "yaniv-game")
   .settings(
     libraryDependencies += "com.typesafe.play" %% "play-json" % "2.8.0",
-    libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.1.2" % Test
   )
 
 lazy val ai = (project in file("ai"))
   .settings(name := "yaniv-ai")
   .settings(
-    libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.1.2" % Test
   )
   .dependsOn(game)
 
