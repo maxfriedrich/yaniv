@@ -21,11 +21,11 @@ object AILogic {
       .maxBy { cards => if (GameLogic.isValidCombination(cards)) cards.map(_.endValue).sum else 0 }
   }
 
-  def combinationsWithDrawable(cards: Seq[Card], drawableCards: Seq[Card], allowOutsideJokers: Boolean = false): Iterator[(Card, Seq[Card])] =
+  def combinationsWithDrawable(cards: Seq[Card], drawableCards: Seq[Card]): Iterator[(Card, Seq[Card])] =
     for {
       drawable    <- drawableCards.iterator
       hand        <- AILogic.combinations(cards)
       combination <- Seq(drawable +: hand, hand :+ drawable)
-      if GameLogic.isValidCombination(combination) && (allowOutsideJokers || !outsideJoker(combination))
+      if GameLogic.isValidCombination(combination) && !outsideJoker(combination)
     } yield (drawable, combination)
 }
