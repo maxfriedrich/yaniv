@@ -32,15 +32,20 @@ object BaselineAI {
   }
 
   def playDraw(gameStateView: GameStateView): GameAction = {
-    cardToDrawFromPile(gameStateView.me.cards, gameStateView.pile.drawable.map(_.card)) match {
+    val drawableCards = gameStateView.pile.drawable.map(_.card)
+    val pileCard = drawJokerFromPile(drawableCards).orElse(cardToDrawFromPile(gameStateView.me.cards, drawableCards))
+    pileCard match {
       case Some(card) => Draw(PileSource(card))
       case _          => Draw(DeckSource)
     }
   }
 
+  def drawJokerFromPile(drawableCards: Seq[Card]): Option[Card] =
+    drawableCards.collectFirst { case j: Joker => j }
+
   def cardToDrawFromPile(cards: Seq[Card], drawableCards: Seq[Card]): Option[Card] = {
     AILogic.combinationsWithAdditionalCards(cards, drawableCards).collectFirst {
-      case (drawable, combination) => drawable
+      case (drawable, _) => drawable
     }
   }
 }

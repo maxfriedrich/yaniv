@@ -56,7 +56,7 @@ case class GameState(
       version = version + 1,
       players = players,
       currentPlayer = currentPlayer,
-      drawThrowPlayer = None,
+      drawThrowPlayer = drawThrowPlayer,
       nextAction = nextAction,
       lastAction = lastAction,
       pile = pile,
