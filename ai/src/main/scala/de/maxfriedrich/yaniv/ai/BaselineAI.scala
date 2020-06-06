@@ -27,7 +27,9 @@ object BaselineAI {
     if (myCards.map(_.endValue).sum <= 3)
       Yaniv
     else {
-      val cardsToUse = myCards.filterNot(cardsToHoldBack(myCards, gameStateView.pile.top))
+      val cardsWithoutPlanned = myCards.filterNot(cardsToHoldBack(myCards, gameStateView.pile.top))
+      // fall back to all cards if there are no more unplanned cards
+      val cardsToUse = if (cardsWithoutPlanned.nonEmpty) cardsWithoutPlanned else myCards
       Throw(AILogic.bestCombination(cardsToUse))
     }
   }
@@ -46,7 +48,7 @@ object BaselineAI {
 
   def cardsToHoldBack(cards: Seq[Card], pileTop: Seq[Card]): Set[Card] = {
     AILogic
-      .combinationsWithAdditionalCards(cards, Seq(pileTop.head, pileTop.last))
+      .combinationsWithAdditionalCards(cards, Seq(pileTop.head, pileTop.last).distinct)
       .collectFirst {
         case (_, combination) => combination.filter(cards.contains).toSet
       }
