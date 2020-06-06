@@ -1,27 +1,24 @@
 package de.maxfriedrich.yaniv.ai
 
-import de.maxfriedrich.yaniv.game.{
-  Card,
-  DeckSource,
-  Draw,
-  DrawType,
-  GameAction,
-  GameStateView,
-  PileSource,
-  Throw,
-  ThrowType,
-  Yaniv
-}
+import de.maxfriedrich.yaniv.game._
 
 class BaselineAI extends AI {
   import BaselineAI._
 
-  override def update(gameStateView: GameStateView): Unit = ()
+  def update(gameStateView: GameStateView): Unit = ()
 
-  override def play(gameStateView: GameStateView): GameAction = gameStateView.nextAction match {
-    case ThrowType => playThrow(gameStateView) // can't draw-throw yet!
+  def playTurn(gameStateView: GameStateView): GameAction = gameStateView.nextAction match {
+    case ThrowType => playThrow(gameStateView)
     case DrawType  => playDraw(gameStateView)
   }
+
+  def playDrawThrow(gameStateView: GameStateView): Option[GameAction] =
+    gameStateView.me.drawThrowable.fold(Option.empty[GameAction]) { drawThrowable =>
+      if (AILogic.doesMatchOutside(gameStateView.pile.top, drawThrowable))
+        Some(DrawThrow(drawThrowable))
+      else
+        None
+    }
 }
 
 object BaselineAI {
@@ -42,7 +39,7 @@ object BaselineAI {
   }
 
   def cardToDrawFromPile(cards: Seq[Card], drawableCards: Seq[Card]): Option[Card] = {
-    AILogic.combinationsWithDrawable(cards, drawableCards).collectFirst {
+    AILogic.combinationsWithAdditionalCards(cards, drawableCards).collectFirst {
       case (drawable, combination) => drawable
     }
   }

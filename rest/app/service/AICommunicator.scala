@@ -23,8 +23,11 @@ class AICommunicator(
       case _ =>
         update.currentGame match {
           case Some(game) if game.currentPlayer == playerId =>
-            val action = ai.play(game)
+            val action = ai.playTurn(game)
             gameAction(action)
+          case Some(game) if game.drawThrowPlayer.fold(false)(_ == playerId) =>
+            val action = ai.playDrawThrow(game)
+            action.map(gameAction)
           case _ => ()
         }
     }

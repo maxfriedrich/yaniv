@@ -31,6 +31,6 @@ class AILogicSpec extends FlatSpec {
   }
 
   "Combinations with drawable" should "find valid combinations" in {
-    assert(AILogic.combinationsWithDrawable(Seq(h3, j1, d4, d3), Seq(h5)).toSeq == Seq((h5, Seq(h3, j1, h5))))
+    assert(AILogic.combinationsWithAdditionalCards(Seq(h3, j1, d4, d3), Seq(h5)).toSeq == Seq((h5, Seq(h3, j1, h5))))
   }
 }
