@@ -55,7 +55,7 @@ class GamesConsistencySpec extends FlatSpec with BeforeAndAfterAll {
 
   "Games service" should "accept new game state if version is set correctly (updating current series state)" in {
     val setup           = setupDrawThrowGame()
-    val drawThrowPlayer = setup.currentGameState.drawThrowPlayer.get
+    val drawThrowPlayer = setup.previousGameState.drawThrowPlayer.get
     val result = for {
       // draw-throw on the previous game state
       invalidState <- GameLogic.drawThrowCard(
@@ -72,7 +72,7 @@ class GamesConsistencySpec extends FlatSpec with BeforeAndAfterAll {
   // this is caught by GameSeriesLogic, so it should not be part of this spec
   "Games service" should "accept new game state if version is set correctly (updating previous series state)" in {
     val setup           = setupDrawThrowGame()
-    val drawThrowPlayer = setup.currentGameState.drawThrowPlayer.get
+    val drawThrowPlayer = setup.previousGameState.drawThrowPlayer.get
     val result = for {
       // draw-throw on the previous game state
       invalidState <- GameLogic.drawThrowCard(
