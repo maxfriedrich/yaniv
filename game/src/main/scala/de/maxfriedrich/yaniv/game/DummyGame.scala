@@ -24,6 +24,7 @@ object DummyGame {
               PlayerCards("p2", shuffled.playerCards(1), None)
             ),
             currentPlayer = "p1",
+            drawThrowPlayer = None,
             nextAction = ThrowType,
             lastAction = None,
             pile = shuffled.pile,
@@ -73,6 +74,7 @@ object DummyGame {
               PlayerCards("p2", shuffled.playerCards(1), None)
             ),
             currentPlayer = "p1",
+            drawThrowPlayer = None,
             nextAction = ThrowType,
             lastAction = None,
             pile = shuffled.pile,
@@ -124,6 +126,7 @@ object DummyGame {
             config = config.gameConfig,
             players = Seq(PlayerCards("p1", shuffled.playerCards.head, None)),
             currentPlayer = "p1",
+            drawThrowPlayer = None,
             nextAction = ThrowType,
             lastAction = Some(DrawThrow(Card.fromString("H6").get)),
             pile = shuffled.pile,
@@ -156,6 +159,7 @@ object DummyGame {
               PlayerCards("p2", shuffled.playerCards(1), None)
             ),
             currentPlayer = "p1",
+            drawThrowPlayer = None,
             nextAction = ThrowType,
             lastAction = Some(Draw(DeckSource)),
             pile = shuffled.pile,
