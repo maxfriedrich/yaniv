@@ -15,9 +15,9 @@ object AILogic {
     case _             => false
   }
 
-  def bestCombination(cards: Seq[Card], allowOutsideJokers: Boolean = false): Seq[Card] = {
+  def bestCombination(cards: Seq[Card]): Seq[Card] = {
     combinations(cards)
-      .filterNot { combination => if (allowOutsideJokers) outsideJoker(combination) else false }
+      .filterNot(outsideJoker)
       .maxBy { cards => if (GameLogic.isValidCombination(cards)) cards.map(_.endValue).sum else 0 }
   }
 
