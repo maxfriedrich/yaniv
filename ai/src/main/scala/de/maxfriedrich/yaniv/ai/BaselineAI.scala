@@ -35,7 +35,7 @@ object BaselineAI {
   }
 
   def playDraw(gameStateView: GameStateView): GameAction = {
-    val drawableCards = gameStateView.pile.drawable.map(_.card)
+    val drawableCards = gameStateView.pile.drawable.filter(_.drawable).map(_.card)
     val pileCard      = drawJokerFromPile(drawableCards).orElse(cardToDrawFromPile(gameStateView.me.cards, drawableCards))
     pileCard match {
       case Some(card) => Draw(PileSource(card))
