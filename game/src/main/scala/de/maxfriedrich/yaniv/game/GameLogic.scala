@@ -13,16 +13,6 @@ object GameLogic {
       order(currentIndex + 1)
   }
 
-  // for draw-throw when it's already someone else's turn
-  def previousPlayer(gs: GameState): PlayerId = {
-    val order        = playerOrder(gs)
-    val currentIndex = order.indexOf(gs.currentPlayer)
-    if (currentIndex == 0)
-      order.last
-    else
-      order(currentIndex - 1)
-  }
-
   private def validateGameState(
       gs: GameState,
       playerId: PlayerId,
@@ -31,8 +21,8 @@ object GameLogic {
   ): Either[String, GameState] = {
     if (!drawThrow && gs.currentPlayer != playerId)
       Left(s"Current player is ${gs.currentPlayer}")
-    else if (drawThrow && previousPlayer(gs) != playerId)
-      Left(s"Previous player is ${previousPlayer(gs)}")
+    else if (drawThrow && gs.drawThrowPlayer.fold(false)(_ != playerId))
+      Left(s"$playerId can't draw-throw")
     else if (gs.nextAction != expectedAction)
       Left(s"Next action is ${gs.nextAction}")
     else if (gs.ending.nonEmpty)
@@ -57,6 +47,7 @@ object GameLogic {
       }
       gs.copy(
         players = newPlayers,
+        drawThrowPlayer = None,
         nextAction = DrawType,
         lastAction = Some(Throw(cards)),
         pile = gs.pile.throwCards(cards)
@@ -87,6 +78,7 @@ object GameLogic {
       gs.copy(
         players = gs.players.map { p => if (p.id == playerId) newPlayer else p },
         currentPlayer = nextPlayer(gs),
+        drawThrowPlayer = Some(playerId),
         nextAction = ThrowType,
         lastAction = Some(Draw(source)),
         pile = newPile,
@@ -116,6 +108,7 @@ object GameLogic {
         if (newPlayer.cards.isEmpty) Some(GameResult(EmptyHand(playerId), computeGameScores(newPlayers))) else None
       gs.copy(
         players = gs.players.map { p => if (p.id == playerId) newPlayer else p },
+        drawThrowPlayer = None,
         lastAction = Some(DrawThrow(card)),
         pile = newPile,
         ending = ending

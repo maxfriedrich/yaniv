@@ -15,17 +15,20 @@ object AILogic {
     case _             => false
   }
 
-  def bestCombination(cards: Seq[Card], allowOutsideJokers: Boolean = false): Seq[Card] = {
+  def bestCombination(cards: Seq[Card]): Seq[Card] = {
     combinations(cards)
-      .filterNot { combination => if (allowOutsideJokers) outsideJoker(combination) else false }
+      .filterNot(outsideJoker)
       .maxBy { cards => if (GameLogic.isValidCombination(cards)) cards.map(_.endValue).sum else 0 }
   }
 
-  def combinationsWithDrawable(cards: Seq[Card], drawableCards: Seq[Card]): Iterator[(Card, Seq[Card])] =
+  def combinationsWithAdditionalCards(cards: Seq[Card], additionalCards: Seq[Card]): Iterator[(Card, Seq[Card])] =
     for {
-      drawable    <- drawableCards.iterator
-      hand        <- AILogic.combinations(cards)
-      combination <- Seq(drawable +: hand, hand :+ drawable)
+      additional  <- additionalCards.iterator
+      choice      <- AILogic.combinations(cards)
+      combination <- Seq(additional +: choice, choice :+ additional)
       if GameLogic.isValidCombination(combination) && !outsideJoker(combination)
-    } yield (drawable, combination)
+    } yield (additional, combination)
+
+  def doesMatchOutside(cards: Seq[Card], card: Card): Boolean =
+    combinationsWithAdditionalCards(cards, Seq(card)).nonEmpty
 }

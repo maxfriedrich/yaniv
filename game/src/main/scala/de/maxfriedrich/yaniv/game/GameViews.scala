@@ -12,6 +12,7 @@ case class GameStateView(
     otherPlayers: Seq[PlayerCardsView],
     playerOrder: Seq[PlayerId],
     currentPlayer: PlayerId,
+    drawThrowPlayer: Option[PlayerId],
     nextAction: GameActionType,
     lastAction: Option[GameAction],
     pile: PileView,
@@ -30,15 +31,16 @@ object GameStateView {
           PartialPlayerCardsView.fromPlayerCards(player)
       }
     GameStateView(
-      me,
-      otherPlayers,
-      gameState.players.map(_.id),
-      gameState.currentPlayer,
-      gameState.nextAction,
-      gameState.lastAction,
-      PileView.fromPile(gameState.pile),
-      gameState.deck.size,
-      gameState.ending
+      me = me,
+      otherPlayers = otherPlayers,
+      playerOrder = gameState.players.map(_.id),
+      currentPlayer = gameState.currentPlayer,
+      drawThrowPlayer = gameState.drawThrowPlayer,
+      nextAction = gameState.nextAction,
+      lastAction = gameState.lastAction,
+      pile = PileView.fromPile(gameState.pile),
+      deck = gameState.deck.size,
+      ending = gameState.ending
     )
   }
 }

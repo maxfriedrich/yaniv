@@ -32,6 +32,7 @@ case class GameState(
     version: Int = 0,
     players: Seq[PlayerCards],
     currentPlayer: PlayerId,
+    drawThrowPlayer: Option[PlayerId],
     nextAction: GameActionType,
     lastAction: Option[GameAction],
     pile: Pile,
@@ -43,6 +44,7 @@ case class GameState(
   private[game] def copy(
       players: Seq[PlayerCards] = players,
       currentPlayer: PlayerId = currentPlayer,
+      drawThrowPlayer: Option[PlayerId] = drawThrowPlayer,
       nextAction: GameActionType = nextAction,
       lastAction: Option[GameAction] = lastAction,
       pile: Pile = pile,
@@ -54,6 +56,7 @@ case class GameState(
       version = version + 1,
       players = players,
       currentPlayer = currentPlayer,
+      drawThrowPlayer = drawThrowPlayer,
       nextAction = nextAction,
       lastAction = lastAction,
       pile = pile,
@@ -72,6 +75,7 @@ object GameState {
         case (player, cards) => PlayerCards(id = player.id, cards = cards, drawThrowable = None)
       },
       currentPlayer = startingPlayer.getOrElse(players.head.id),
+      drawThrowPlayer = None,
       nextAction = ThrowType,
       lastAction = None,
       pile = shuffled.pile,
