@@ -6,7 +6,13 @@ import akka.stream.scaladsl.Source
 import scala.concurrent.duration._
 import de.maxfriedrich.yaniv.ai.BaselineAI
 import de.maxfriedrich.yaniv.game.{GameAction, PlayerId}
-import de.maxfriedrich.yaniv.game.series.{AcceptNext, GameIsRunning, GameSeriesAction, GameSeriesStateView, WaitingForNextGame}
+import de.maxfriedrich.yaniv.game.series.{
+  AcceptNext,
+  GameIsRunning,
+  GameSeriesAction,
+  GameSeriesStateView,
+  WaitingForNextGame
+}
 
 class AICommunicator(
     playerId: PlayerId,
