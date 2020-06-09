@@ -47,12 +47,14 @@ object BaselineAI {
     drawableCards.collectFirst { case j: Joker => j }
 
   def cardsToHoldBack(cards: Seq[Card], pileTop: Seq[Card]): Set[Card] = {
-    AILogic
+    val combinations = AILogic
       .combinationsWithAdditionalCards(cards, Seq(pileTop.head, pileTop.last).distinct)
-      .collectFirst {
-        case (_, combination) => combination.filter(cards.contains).toSet
-      }
-      .getOrElse(Set.empty)
+      .map(_._2)
+
+    if (combinations.nonEmpty)
+      combinations.maxBy(_.map(_.endValue).sum).filter(cards.contains).toSet
+    else
+      Set.empty
   }
 
   def cardToDrawFromPile(cards: Seq[Card], drawableCards: Seq[Card]): Option[Card] = {
