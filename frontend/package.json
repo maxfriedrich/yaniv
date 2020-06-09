@@ -40,7 +40,7 @@
     "sass-loader": "^8.0.2",
     "sirv-cli": "^0.4.5",
     "ts-loader": "^6.2.2",
-    "typescript": "^3.9.2"
+    "typescript": "^3.9.5"
   },
   "dependencies": {
     "bootstrap": "^4.5.0",
