@@ -2,7 +2,7 @@ name := "yaniv"
 organization := "de.maxfriedrich"
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.13.1"
+scalaVersion := "2.12.11"
 
 lazy val game = (project in file("game"))
   .settings(name := "yaniv-game")
