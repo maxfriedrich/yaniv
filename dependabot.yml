@@ -1,0 +1,7 @@
+version: 2
+updates:
+  # sbt is not yet supported
+  - package-ecosystem: "npm"
+    directory: "/frontend/"
+    schedule:
+      interval: "weekly"
