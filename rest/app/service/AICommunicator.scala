@@ -4,7 +4,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 
 import scala.concurrent.duration._
-import de.maxfriedrich.yaniv.ai.BaselineAI
+import de.maxfriedrich.yaniv.ai.{AI, BaselineAI}
 import de.maxfriedrich.yaniv.game.{GameAction, PlayerId}
 import de.maxfriedrich.yaniv.game.series.{
   AcceptNext,
@@ -20,23 +20,33 @@ class AICommunicator(
     gameAction: GameAction => Either[String, GameSeriesStateView],
     gameSeriesAction: GameSeriesAction => Either[String, Unit]
 )(implicit mat: Materializer) {
-  val ai = new BaselineAI()
+
+  import AICommunicator._
+
+  var ai: AI = _
 
   inGame.delay(1.second).runForeach { update =>
     update.state match {
       case WaitingForNextGame(acceptedPlayers) if !acceptedPlayers(playerId) =>
         gameSeriesAction(AcceptNext(playerId))
       case GameIsRunning =>
-        update.currentGame match {
-          case Some(game) if game.currentPlayer == playerId =>
+        for {
+          game <- update.currentGame
+          _ = if (game.lastAction.isEmpty) ai = makeAI(playerId, game.playerOrder)
+          _ = ai.update(update.version, game)
+        } yield {
+          if (game.currentPlayer == playerId) {
             val action = ai.playTurn(game)
             gameAction(action)
-          case Some(game) if game.drawThrowPlayer.fold(false)(_ == playerId) =>
+          } else if (game.drawThrowPlayer.fold(false)(_ == playerId)) {
             val action = ai.playDrawThrow(game)
             action.map(gameAction)
-          case _ => ()
+          }
         }
-      case _ => ()
     }
   }
+}
+
+object AICommunicator {
+  def makeAI(me: PlayerId, opponents: Seq[PlayerId]): AI = new BaselineAI(me, opponents)
 }

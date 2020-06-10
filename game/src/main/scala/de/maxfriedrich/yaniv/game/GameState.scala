@@ -12,6 +12,8 @@ case class Throw(cards: Seq[Card])  extends GameAction
 case class DrawThrow(card: Card)    extends GameAction
 case object Yaniv                   extends GameAction
 
+case class GameActionWithPlayer(player: PlayerId, gameAction: GameAction)
+
 case class PlayerCards(id: PlayerId, cards: Seq[Card], drawThrowable: Option[Card])
 
 sealed trait DrawSource
@@ -34,7 +36,7 @@ case class GameState(
     currentPlayer: PlayerId,
     drawThrowPlayer: Option[PlayerId],
     nextAction: GameActionType,
-    lastAction: Option[GameAction],
+    lastAction: Option[GameActionWithPlayer],
     pile: Pile,
     deck: Seq[Card],
     ending: Option[GameResult]
@@ -46,7 +48,7 @@ case class GameState(
       currentPlayer: PlayerId = currentPlayer,
       drawThrowPlayer: Option[PlayerId] = drawThrowPlayer,
       nextAction: GameActionType = nextAction,
-      lastAction: Option[GameAction] = lastAction,
+      lastAction: Option[GameActionWithPlayer] = lastAction,
       pile: Pile = pile,
       deck: Seq[Card] = deck,
       ending: Option[GameResult] = ending

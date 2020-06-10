@@ -84,6 +84,9 @@ object JsonImplicits {
     case Yaniv           => Json.writes[JsonYaniv].writes(JsonYaniv(Strings.Yaniv))
   }
 
+  implicit val gameActionWithPlayerReads: Reads[GameActionWithPlayer]   = Json.reads[GameActionWithPlayer]
+  implicit val gameActionWithPlayerWrites: Writes[GameActionWithPlayer] = Json.writes[GameActionWithPlayer]
+
   implicit val gameEndingReads: Reads[GameEnding] = Reads { json =>
     json \ "type" match {
       case JsDefined(JsString(Strings.Yaniv)) => Json.reads[Yaniv].reads(json)
