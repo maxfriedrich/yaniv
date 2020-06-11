@@ -1,29 +1,44 @@
 package de.maxfriedrich.yaniv.ai
 
+import de.maxfriedrich.yaniv.ai.BaselineAIState.KnownCardsMap
 import de.maxfriedrich.yaniv.game._
 
-class BaselineAI(me: PlayerId, playerOrder: Seq[PlayerId]) extends AI {
+case class BaselineAIState(me: PlayerId, afterMe: PlayerId, version: Int, knownCards: KnownCardsMap)
 
+object BaselineAIState {
+  type KnownCardsMap = Map[PlayerId, Set[Card]]
+
+  def empty(me: PlayerId, playerOrder: Seq[PlayerId], version: Int): BaselineAIState = {
+    val afterMe: PlayerId = {
+      val myIndex = playerOrder.indexOf(me)
+      if (myIndex + 1 == playerOrder.size)
+        playerOrder.head
+      else
+        playerOrder(myIndex + 1)
+    }
+    val knownCards = playerOrder.filterNot(Set(me)).map(p => p -> Set.empty[Card]).toMap
+    BaselineAIState(me, afterMe, version, knownCards)
+  }
+}
+
+case class BaselineAI(state: BaselineAIState) extends AI[BaselineAIState] {
   import BaselineAI._
 
-  val knownCards       = new KnownCardsService(playerOrder.filterNot(Set(me)))
-  var lastVersion: Int = -1
-  val nextPlayer: PlayerId = {
-    val myIndex = playerOrder.indexOf(me)
-    if (myIndex + 1 == playerOrder.size)
-      playerOrder.head
-    else
-      playerOrder(myIndex + 1)
-  }
-
-  def reset(): Unit = ()
-
-  def update(version: Int, gameStateView: GameStateView): Unit = {
-    if (version == lastVersion + 1) {
-      knownCards.update(gameStateView.otherPlayers, gameStateView.lastAction)
-    } else if (version > lastVersion + 1) {
-      // An update was missing, better just reset the ledger
-      knownCards.reset()
+  def update(version: Int, gameStateView: GameStateView): BaselineAI = {
+    if (version == state.version + 1) {
+      val newKnownCards = gameStateView.lastAction match {
+        case Some(actionWithPlayer) if actionWithPlayer.player != state.me =>
+          val newPlayerCards =
+            updatePlayerKnownCards(state.knownCards(actionWithPlayer.player), actionWithPlayer.gameAction)
+          state.knownCards ++ Map(actionWithPlayer.player -> newPlayerCards)
+        case _ => state.knownCards
+      }
+      BaselineAI(state.copy(knownCards = newKnownCards, version = version))
+    } else if (version > state.version + 1) {
+      // An update in between was missing, better just reset the known cards
+      BaselineAI(state.copy(knownCards = state.knownCards.mapValues(_ => Set.empty[Card]), version = version))
+    } else {
+      this
     }
   }
 
@@ -37,13 +52,11 @@ class BaselineAI(me: PlayerId, playerOrder: Seq[PlayerId]) extends AI {
     if (myCards.map(_.endValue).sum <= callYanivThreshold)
       Yaniv
     else {
-      val cardsWithoutPlanned = {
-        val step1 = myCards.filterNot(cardsToHoldBackForNextThrow(myCards, gameStateView.pile.top))
-        step1.filterNot(cardsToHoldBackForNextPlayer(step1, knownCards.get(nextPlayer)))
-      }
+      val cardsWithoutPlanned = myCards.filterNot(cardsToHoldBackForNextThrow(myCards, gameStateView.pile.top))
+      val avoidOutside        = cardsToHoldBackForNextPlayer(cardsWithoutPlanned, state.knownCards(state.afterMe))
       // fall back to all cards if there are no more unplanned cards
       val cardsToUse = if (cardsWithoutPlanned.nonEmpty) cardsWithoutPlanned else myCards
-      Throw(AILogic.bestCombination(cardsToUse))
+      Throw(AILogic.bestCombination(cardsToUse, avoidOutside))
     }
   }
 
@@ -95,5 +108,12 @@ object BaselineAI {
     AILogic.combinationsWithAdditionalCards(cards, drawableCards).collectFirst {
       case (drawable, _) => drawable
     }
+  }
+
+  def updatePlayerKnownCards(playerCards: Set[Card], gameAction: GameAction): Set[Card] = gameAction match {
+    case Draw(PileSource(card)) => playerCards ++ Set(card)
+    case Throw(cards)           => playerCards -- cards
+    case DrawThrow(card)        => playerCards -- Set(card)
+    case _                      => playerCards
   }
 }

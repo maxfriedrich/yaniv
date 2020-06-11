@@ -4,7 +4,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 
 import scala.concurrent.duration._
-import de.maxfriedrich.yaniv.ai.{AI, BaselineAI}
+import de.maxfriedrich.yaniv.ai.{BaselineAI, BaselineAIState}
 import de.maxfriedrich.yaniv.game.{GameAction, PlayerId}
 import de.maxfriedrich.yaniv.game.series.{
   AcceptNext,
@@ -23,7 +23,7 @@ class AICommunicator(
 
   import AICommunicator._
 
-  var ai: AI = _
+  var ai: BaselineAI = _
 
   inGame.delay(1.second).runForeach { update =>
     update.state match {
@@ -32,9 +32,12 @@ class AICommunicator(
       case GameIsRunning =>
         for {
           game <- update.currentGame
-          _ = if (game.lastAction.isEmpty) ai = makeAI(playerId, game.playerOrder)
-          _ = ai.update(update.version, game)
+          newAi = if (game.lastAction.isEmpty)
+            makeAI(playerId, game.playerOrder, update.version)
+          else
+            ai.update(update.version, game)
         } yield {
+          ai = newAi
           if (game.currentPlayer == playerId) {
             val action = ai.playTurn(game)
             gameAction(action)
@@ -48,5 +51,6 @@ class AICommunicator(
 }
 
 object AICommunicator {
-  def makeAI(me: PlayerId, opponents: Seq[PlayerId]): AI = new BaselineAI(me, opponents)
+  def makeAI(me: PlayerId, opponents: Seq[PlayerId], version: Int): BaselineAI =
+    BaselineAI(BaselineAIState.empty(me, opponents, version))
 }

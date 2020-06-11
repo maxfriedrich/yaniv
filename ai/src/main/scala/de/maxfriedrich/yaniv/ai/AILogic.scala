@@ -9,16 +9,27 @@ object AILogic {
         acc ++ cards.combinations(n).flatMap(_.permutations)
     }
 
-  def outsideJoker(cards: Seq[Card]): Boolean = (cards.head, cards.last) match {
-    case (Joker(_), _) => true
-    case (_, Joker(_)) => true
-    case _             => false
+  def outsideJoker(cards: Seq[Card]): Boolean =
+    outsideCards(cards, {
+      case Joker(_) => true
+      case _        => false
+    })
+
+  def outsideCards(cards: Seq[Card], outsideMatcher: Card => Boolean): Boolean = (cards.head, cards.last) match {
+    case (c, _) if outsideMatcher(c) => true
+    case (_, c) if outsideMatcher(c) => true
+    case _                           => false
   }
 
-  def bestCombination(cards: Seq[Card]): Seq[Card] = {
-    combinations(cards)
+  def bestCombination(cards: Seq[Card], avoidOutside: Set[Card] = Set.empty): Seq[Card] = {
+    val sortedCombinations = combinations(cards)
       .filterNot(outsideJoker)
-      .maxBy { cards => if (GameLogic.isValidCombination(cards)) cards.map(_.endValue).sum else 0 }
+      .toSeq
+      .sortBy { cards => if (GameLogic.isValidCombination(cards)) -cards.map(_.endValue).sum else 0 }
+    val bestAvoidingOutside = sortedCombinations.collectFirst {
+      case combination if !outsideCards(combination, avoidOutside.contains) => combination
+    }
+    bestAvoidingOutside.getOrElse(sortedCombinations.head)
   }
 
   def combinationsWithAdditionalCards(cards: Seq[Card], additionalCards: Seq[Card]): Iterator[(Card, Seq[Card])] =
