@@ -43,21 +43,12 @@ case class BaselineAI(state: BaselineAIState) extends AI[BaselineAIState] {
   }
 
   def playTurn(gameStateView: GameStateView): GameAction = gameStateView.nextAction match {
-    case ThrowType => playThrow(gameStateView)
-    case DrawType  => playDraw(gameStateView)
-  }
-
-  def playThrow(gameStateView: GameStateView): GameAction = {
-    val myCards = gameStateView.me.cards
-    if (myCards.map(_.endValue).sum <= callYanivThreshold)
-      Yaniv
-    else {
-      val cardsWithoutPlanned = myCards.filterNot(cardsToHoldBackForNextThrow(myCards, gameStateView.pile.top))
-      val avoidOutside        = cardsToHoldBackForNextPlayer(cardsWithoutPlanned, state.knownCards(state.afterMe))
-      // fall back to all cards if there are no more unplanned cards
-      val cardsToUse = if (cardsWithoutPlanned.nonEmpty) cardsWithoutPlanned else myCards
-      Throw(AILogic.bestCombination(cardsToUse, avoidOutside))
-    }
+    case ThrowType =>
+      if (shouldCallYaniv(gameStateView, state.knownCards))
+        Yaniv
+      else
+        playThrow(gameStateView, state.knownCards(state.afterMe))
+    case DrawType => playDraw(gameStateView)
   }
 
   def playDrawThrow(gameStateView: GameStateView): Option[GameAction] =
@@ -66,7 +57,6 @@ case class BaselineAI(state: BaselineAIState) extends AI[BaselineAIState] {
       if AILogic.doesMatchOutside(gameStateView.pile.top, card)
     } yield DrawThrow(card)
 
-  def callYanivThreshold: Int = 3
 }
 
 object BaselineAI {
@@ -91,6 +81,44 @@ object BaselineAI {
       combinations.maxBy(_.map(_.endValue).sum).filter(cards.contains).toSet
     else
       Set.empty
+  }
+
+  def shouldCallYaniv(gameStateView: GameStateView, knownCards: KnownCardsMap): Boolean = {
+    val myScore = gameStateView.me.cards.map(_.endValue).sum
+    if (myScore > 5) {
+      false
+    } else if (minimumKnownScore(knownCards, gameStateView.otherPlayers).fold(false)(myScore > _)) {
+      false
+    } else if (myScore < minimumKnownScoreLowerBound(knownCards)) {
+      true
+    } else {
+      // TODO: decide based on turn and numCards features
+      myScore <= 3
+    }
+  }
+
+  def minimumKnownScore(knownCards: KnownCardsMap, otherPlayers: Seq[PlayerCardsView]): Option[Int] = {
+    val numCards = otherPlayers.map(player => player.id -> player.numCards).toMap
+    val fullyKnown = knownCards.collect {
+      case (id, known) if (known.size == numCards(id)) => known.map(_.endValue).sum
+    }.toSeq
+    if (fullyKnown.isEmpty)
+      None
+    else
+      Some(fullyKnown.min)
+  }
+
+  def minimumKnownScoreLowerBound(knownCards: KnownCardsMap): Int =
+    knownCards.values.map(_.map(_.endValue).sum).min
+
+  def playThrow(gameStateView: GameStateView, playerAfterMeKnownCards: Set[Card]): GameAction = {
+    val myCards = gameStateView.me.cards
+
+    val cardsWithoutPlanned = myCards.filterNot(cardsToHoldBackForNextThrow(myCards, gameStateView.pile.top))
+    val avoidOutside        = cardsToHoldBackForNextPlayer(cardsWithoutPlanned, playerAfterMeKnownCards)
+    // fall back to all cards if there are no more unplanned cards
+    val cardsToUse = if (cardsWithoutPlanned.nonEmpty) cardsWithoutPlanned else myCards
+    Throw(AILogic.bestCombination(cardsToUse, avoidOutside))
   }
 
   def cardsToHoldBackForNextPlayer(cards: Seq[Card], nextPlayerKnown: Set[Card]): Set[Card] = {

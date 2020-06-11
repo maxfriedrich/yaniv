@@ -6,13 +6,7 @@ import akka.stream.scaladsl.Source
 import scala.concurrent.duration._
 import de.maxfriedrich.yaniv.ai.{BaselineAI, BaselineAIState}
 import de.maxfriedrich.yaniv.game.{GameAction, PlayerId}
-import de.maxfriedrich.yaniv.game.series.{
-  AcceptNext,
-  GameIsRunning,
-  GameSeriesAction,
-  GameSeriesStateView,
-  WaitingForNextGame
-}
+import de.maxfriedrich.yaniv.game.series._
 
 class AICommunicator(
     playerId: PlayerId,
@@ -28,6 +22,8 @@ class AICommunicator(
   inGame.delay(1.second).runForeach { update =>
     update.state match {
       case WaitingForNextGame(acceptedPlayers) if !acceptedPlayers(playerId) =>
+        gameSeriesAction(AcceptNext(playerId))
+      case GameOver(_, acceptedPlayers) if !acceptedPlayers(playerId) =>
         gameSeriesAction(AcceptNext(playerId))
       case GameIsRunning =>
         for {
@@ -46,6 +42,7 @@ class AICommunicator(
             action.map(gameAction)
           }
         }
+      case _ => ()
     }
   }
 }
