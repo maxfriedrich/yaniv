@@ -4,15 +4,9 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 
 import scala.concurrent.duration._
-import de.maxfriedrich.yaniv.ai.BaselineAI
+import de.maxfriedrich.yaniv.ai.{BaselineAI, BaselineAIState}
 import de.maxfriedrich.yaniv.game.{GameAction, PlayerId}
-import de.maxfriedrich.yaniv.game.series.{
-  AcceptNext,
-  GameIsRunning,
-  GameSeriesAction,
-  GameSeriesStateView,
-  WaitingForNextGame
-}
+import de.maxfriedrich.yaniv.game.series._
 
 class AICommunicator(
     playerId: PlayerId,
@@ -20,23 +14,40 @@ class AICommunicator(
     gameAction: GameAction => Either[String, GameSeriesStateView],
     gameSeriesAction: GameSeriesAction => Either[String, Unit]
 )(implicit mat: Materializer) {
-  val ai = new BaselineAI()
+
+  import AICommunicator._
+
+  var ai: BaselineAI = _
 
   inGame.delay(1.second).runForeach { update =>
     update.state match {
       case WaitingForNextGame(acceptedPlayers) if !acceptedPlayers(playerId) =>
         gameSeriesAction(AcceptNext(playerId))
+      case GameOver(_, acceptedPlayers) if !acceptedPlayers(playerId) =>
+        gameSeriesAction(AcceptNext(playerId))
       case GameIsRunning =>
-        update.currentGame match {
-          case Some(game) if game.currentPlayer == playerId =>
+        for {
+          game <- update.currentGame
+          newAi = if (game.lastAction.isEmpty)
+            makeAI(playerId, game.playerOrder, update.version)
+          else
+            ai.update(update.version, game)
+        } yield {
+          ai = newAi
+          if (game.currentPlayer == playerId) {
             val action = ai.playTurn(game)
             gameAction(action)
-          case Some(game) if game.drawThrowPlayer.fold(false)(_ == playerId) =>
+          } else if (game.drawThrowPlayer.fold(false)(_ == playerId)) {
             val action = ai.playDrawThrow(game)
             action.map(gameAction)
-          case _ => ()
+          }
         }
       case _ => ()
     }
   }
+}
+
+object AICommunicator {
+  def makeAI(me: PlayerId, opponents: Seq[PlayerId], version: Int): BaselineAI =
+    BaselineAI(BaselineAIState.empty(me, opponents, version))
 }

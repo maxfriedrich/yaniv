@@ -49,7 +49,7 @@ object GameLogic {
         players = newPlayers,
         drawThrowPlayer = None,
         nextAction = DrawType,
-        lastAction = Some(Throw(cards)),
+        lastAction = Some(GameActionWithPlayer(playerId, Throw(cards))),
         pile = gs.pile.throwCards(cards)
       )
     }
@@ -80,7 +80,7 @@ object GameLogic {
         currentPlayer = nextPlayer(gs),
         drawThrowPlayer = Some(playerId),
         nextAction = ThrowType,
-        lastAction = Some(Draw(source)),
+        lastAction = Some(GameActionWithPlayer(playerId, Draw(source))),
         pile = newPile,
         deck = newDeck
       )
@@ -98,7 +98,7 @@ object GameLogic {
         playerCards.drawThrowable.get,
         "Player does not have a draw-throwable card"
       )
-      _ <- Either.cond(drawThrowable == card, (), "This is not the player's drawThrowable card")
+      _ <- Either.cond(drawThrowable == card, (), "This is not the player's draw-throwable card")
     } yield {
       val newCards   = playerCards.cards.filterNot(Set(card))
       val newPlayer  = playerCards.copy(cards = newCards, drawThrowable = None)
@@ -109,7 +109,7 @@ object GameLogic {
       gs.copy(
         players = gs.players.map { p => if (p.id == playerId) newPlayer else p },
         drawThrowPlayer = None,
-        lastAction = Some(DrawThrow(card)),
+        lastAction = Some(GameActionWithPlayer(playerId, DrawThrow(card))),
         pile = newPile,
         ending = ending
       )

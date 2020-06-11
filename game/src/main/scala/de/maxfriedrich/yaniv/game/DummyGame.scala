@@ -128,7 +128,7 @@ object DummyGame {
             currentPlayer = "p1",
             drawThrowPlayer = None,
             nextAction = ThrowType,
-            lastAction = Some(DrawThrow(Card.fromString("H6").get)),
+            lastAction = Some(GameActionWithPlayer("p2", DrawThrow(Card.fromString("H6").get))),
             pile = shuffled.pile,
             deck = shuffled.deck,
             ending = None
@@ -161,7 +161,7 @@ object DummyGame {
             currentPlayer = "p1",
             drawThrowPlayer = None,
             nextAction = ThrowType,
-            lastAction = Some(Draw(DeckSource)),
+            lastAction = Some(GameActionWithPlayer("p2", Draw(DeckSource))),
             pile = shuffled.pile,
             deck = shuffled.deck,
             ending = Some(GameResult(Yaniv("p1", 2), Map("p1" -> 2, "p2" -> 4)))
