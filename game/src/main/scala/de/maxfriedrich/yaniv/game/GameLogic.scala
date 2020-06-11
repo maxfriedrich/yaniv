@@ -98,7 +98,7 @@ object GameLogic {
         playerCards.drawThrowable.get,
         "Player does not have a draw-throwable card"
       )
-      _ <- Either.cond(drawThrowable == card, (), "This is not the player's drawThrowable card")
+      _ <- Either.cond(drawThrowable == card, (), "This is not the player's draw-throwable card")
     } yield {
       val newCards   = playerCards.cards.filterNot(Set(card))
       val newPlayer  = playerCards.copy(cards = newCards, drawThrowable = None)
