@@ -39,6 +39,7 @@ export const Hand = ({
         orientation="horizontal"
         getChildPayload={getChildPayload(cards)}
         onDrop={onDrop}
+        autoScrollEnabled={false}
       >
         {cards.map(c => (
           <Draggable key={c.id}>

@@ -90,7 +90,6 @@ export class Game extends Component<
       return this.isPastGame() ? myCards : myCards?.length;
     }
     const otherPlayers = this.state.serverState.currentGame?.otherPlayers;
-    console.log('otherplayers:', otherPlayers);
     if (otherPlayers?.length === 0) {
       return undefined;
     }
@@ -235,14 +234,12 @@ export class Game extends Component<
     const newSelection = this.state.selected.concat([card]);
     const newSortedCards = this.state.sortedCards.filter(c => c.id !== card.id);
     this.setState({ selected: newSelection, sortedCards: newSortedCards });
-    console.log('Selecting card: ' + card.id);
   };
 
   unselectCard = (card: CardType) => () => {
     const newSelection = this.state.selected.filter(c => c.id !== card.id);
     const newSortedCards = this.state.sortedCards.concat([card]);
     this.setState({ selected: newSelection, sortedCards: newSortedCards });
-    console.log('Unselecting card: ' + card.id);
   };
 
   updateSelectedOnDrop = e =>
@@ -264,7 +261,8 @@ export class Game extends Component<
   isYanivDisabled = () =>
     !this.isCurrentPlayerThrow() ||
     this.state.selected.length > 0 ||
-    this.state.sortedCards.map(c => c.endValue).reduce((acc, x) => acc + x, 0) > 5;
+    this.state.sortedCards.map(c => c.endValue).reduce((acc, x) => acc + x, 0) >
+      5;
 
   drawFromPile = (card: CardType) => {
     console.log('Drawing from pile: ', card.id);
@@ -359,7 +357,6 @@ export class Game extends Component<
   };
 
   drawThrow = () => {
-    console.log(this.state);
     console.log(
       'Draw-throwing card: ' +
         this.state.serverState.currentGame?.me.drawThrowable?.id
@@ -390,7 +387,6 @@ export class Game extends Component<
   };
 
   yaniv = () => {
-    console.log(this.state);
     console.log('Calling yaniv');
     fetch(
       `/rest/game/${this.props.gameId}/player/${this.props.playerId}/yaniv`,

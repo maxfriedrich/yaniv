@@ -45,11 +45,24 @@ export interface FullPlayerCardsViewType extends PlayerCardsViewType {
 
 export type PartialPlayerCardsViewType = PlayerCardsViewType;
 
-export interface LastActionType { type: string }
-export interface LastActionStartedType extends LastActionType { type: "started" }
-export interface LastActionThrownType extends LastActionType { type: "thrown",  cards: CardType[] }
-export interface LastActionDrawnType extends LastActionType { type: "drawn", source: 'deck' | CardType }
-export interface LastActionDrawThrownType extends LastActionType { type: "drawThrown", card: CardType }
+export interface LastActionType {
+  type: string;
+}
+export interface LastActionStartedType extends LastActionType {
+  type: 'started';
+}
+export interface LastActionThrownType extends LastActionType {
+  type: 'thrown';
+  cards: CardType[];
+}
+export interface LastActionDrawnType extends LastActionType {
+  type: 'drawn';
+  source: 'deck' | CardType;
+}
+export interface LastActionDrawThrownType extends LastActionType {
+  type: 'drawThrown';
+  card: CardType;
+}
 
 export interface GameStateType {
   me: PlayerCardsType;

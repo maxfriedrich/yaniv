@@ -61,20 +61,12 @@ export const Waiting = ({
         ))}
         <li class="list-group-item d-flex justify-content-start align-items-middle">
           {isWebShareAvailable() ? (
-            <Fragment>
-              <button
-                class="btn btn-outline-primary btn-sm mr-2"
-                onClick={webShare(joinLink, onShareError)}
-              >
-                🔗 Invite Players
-              </button>
-              <button
-                  class="btn btn-outline-secondary btn-sm mr-2"
-                  onClick={addAI}
-              >
-                🤖 Add AI
-              </button>
-            </Fragment>
+            <button
+              class="btn btn-outline-primary btn-sm mr-2"
+              onClick={webShare(joinLink, onShareError)}
+            >
+              🔗 Invite Players
+            </button>
           ) : (
             <a href={joinLink}>
               <button class="btn btn-outline-primary btn-sm mr-2">
@@ -82,6 +74,9 @@ export const Waiting = ({
               </button>
             </a>
           )}
+          <button class="btn btn-outline-secondary btn-sm mr-2" onClick={addAI}>
+            🤖 Add AI
+          </button>
         </li>
       </ul>
       <button

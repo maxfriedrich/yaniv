@@ -1,6 +1,13 @@
 import { h } from 'preact';
 
-import { CardType, PileType, LastActionType, LastActionThrownType, LastActionDrawnType, LastActionDrawThrownType } from './api';
+import {
+  CardType,
+  PileType,
+  LastActionType,
+  LastActionThrownType,
+  LastActionDrawnType,
+  LastActionDrawThrownType
+} from './api';
 import { Card } from './card';
 
 const drawCard = (drawAction: (card: CardType) => void, card: CardType) => () =>
@@ -13,31 +20,55 @@ export interface PileProps {
   lastActionTmp?: LastActionType;
 }
 
-const isLastActionDrawThrow = (card: CardType, lastAction?: LastActionType): boolean => {
-  console.log(lastAction, card);
-  switch(lastAction?.type) {
-    case "thrown": return ((lastAction as LastActionThrownType).cards as CardType[]).map(c => c.id).includes(card.id);
-    case "drawn": return (lastAction as LastActionDrawnType).source === card.id;
-    case "drawThrown": return (lastAction as LastActionDrawThrownType).card.id === card.id;
-    default: return false;
+const isLastActionDrawThrow = (
+  card: CardType,
+  lastAction?: LastActionType
+): boolean => {
+  switch (lastAction?.type) {
+    case 'thrown':
+      return (lastAction as LastActionThrownType).cards
+        .map(c => c.id)
+        .includes(card.id);
+    case 'drawn':
+      return (lastAction as LastActionDrawnType).source === card.id;
+    case 'drawThrown':
+      return (lastAction as LastActionDrawThrownType).card.id === card.id;
+    default:
+      return false;
   }
-}
+};
 
 const isLastActionThrow = (lastAction?: LastActionType): boolean => {
-  console.log(lastAction);
   switch (lastAction?.type) {
-    case "thrown": return true;
-    default: return false;
+    case 'thrown':
+      return true;
+    default:
+      return false;
   }
-}
+};
 
-export const Pile = ({ pile, disabled, drawAction, lastActionTmp }: PileProps) => {
-  const animateThrowClass = isLastActionThrow(lastActionTmp) ? 'animate-throw' : '';
+export const Pile = ({
+  pile,
+  disabled,
+  drawAction,
+  lastActionTmp
+}: PileProps) => {
+  const animateThrowClass = isLastActionThrow(lastActionTmp)
+    ? 'animate-throw'
+    : '';
   return (
     <div class="pile-container">
       <div className={`top-container ${animateThrowClass}`}>
         {pile?.top.map(card => (
-          <Card card={card} playable={false} classes={`pile-card ${isLastActionDrawThrow(card, lastActionTmp) ? 'animate-drawthrow' : ''}`} />
+          <Card
+            card={card}
+            playable={false}
+            classes={`pile-card ${
+              isLastActionDrawThrow(card, lastActionTmp)
+                ? 'animate-drawthrow'
+                : ''
+            }`}
+          />
         ))}
       </div>
       <div className={`drawable-container ${animateThrowClass}`}>
@@ -51,10 +82,14 @@ export const Pile = ({ pile, disabled, drawAction, lastActionTmp }: PileProps) =
         ))}
       </div>
       {pile?.bottom || 0 > 0 ? (
-        <Card playable={false} backside classes={`pile-card pile-bottom ${animateThrowClass}`} />
+        <Card
+          playable={false}
+          backside
+          classes={`pile-card pile-bottom ${animateThrowClass}`}
+        />
       ) : (
-          <div />
-        )}
+        <div />
+      )}
     </div>
-  )
-}
+  );
+};
