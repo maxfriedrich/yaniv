@@ -40,7 +40,7 @@ export const Card = ({
     <div
       className={`game-card ${playableClass} ${backsideClass} ${
         card ? color(card) : ''
-      } ${classes}`}
+      } ${classes || ''}`}
       disabled={!playable}
       onClick={wrappedAction(playable, action || (() => undefined))}
     >

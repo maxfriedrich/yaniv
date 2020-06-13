@@ -464,7 +464,7 @@ export class Game extends Component<
         )}
       </div>
 
-      <div class="card my=2">
+      <div class="card my-2">
         <div class="hand-container">
           <div class="card-header">
             {serverState.currentGame?.ending ? (

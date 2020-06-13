@@ -1,4 +1,4 @@
-import { h, Fragment } from 'preact';
+import { h } from 'preact';
 
 // TODO: type should be in a common directory
 import { PlayerInfoType } from '../game/api';
