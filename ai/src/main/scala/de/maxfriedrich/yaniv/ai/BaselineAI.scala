@@ -92,8 +92,7 @@ object BaselineAI {
     } else if (myScore < minimumKnownScoreLowerBound(knownCards)) {
       true
     } else {
-      // TODO: decide based on turn and numCards features
-      myScore <= 3
+      myScore < gameStateView.otherPlayers.map(p => predictPlayerScore(p.id, gameStateView)).min
     }
   }
 
@@ -110,6 +109,11 @@ object BaselineAI {
 
   def minimumKnownScoreLowerBound(knownCards: KnownCardsMap): Int =
     knownCards.values.map(_.map(_.endValue).sum).min
+
+  def predictPlayerScore(playerId: PlayerId, gameStateView: GameStateView): Int = {
+    val predictor = PointsPredictor()
+    predictor(PointsPredictorFeatures(playerId, gameStateView)).floor.toInt
+  }
 
   def playThrow(gameStateView: GameStateView, playerAfterMeKnownCards: Set[Card]): GameAction = {
     val myCards = gameStateView.me.cards
