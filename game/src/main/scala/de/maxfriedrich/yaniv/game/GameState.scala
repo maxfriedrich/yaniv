@@ -32,18 +32,20 @@ case class GameResult(ending: GameEnding, points: Map[PlayerId, Int])
 case class GameState(
     config: GameConfig,
     version: Int = 0,
-    players: Seq[PlayerCards],
+    turn: Int = 1,
     currentPlayer: PlayerId,
     drawThrowPlayer: Option[PlayerId],
     nextAction: GameActionType,
     lastAction: Option[GameActionWithPlayer],
     pile: Pile,
     deck: Seq[Card],
-    ending: Option[GameResult]
+    ending: Option[GameResult],
+    players: Seq[PlayerCards]
 ) {
   // copy forcing a version update but dumb otherwise (use GameLogic methods instead!)
   // TODO: not very nice to mix logic into the case class :/
   private[game] def copy(
+      turn: Int = turn,
       players: Seq[PlayerCards] = players,
       currentPlayer: PlayerId = currentPlayer,
       drawThrowPlayer: Option[PlayerId] = drawThrowPlayer,
@@ -56,14 +58,15 @@ case class GameState(
     GameState(
       config = config,
       version = version + 1,
-      players = players,
+      turn = turn,
       currentPlayer = currentPlayer,
       drawThrowPlayer = drawThrowPlayer,
       nextAction = nextAction,
       lastAction = lastAction,
       pile = pile,
       deck = deck,
-      ending = ending
+      ending = ending,
+      players = players
     )
 
 }
@@ -73,16 +76,16 @@ object GameState {
     val shuffled = Shuffle.shuffle(players.size, config.playerNumCards, config.deck)
     GameState(
       config = config,
-      players = players.zip(shuffled.playerCards).map {
-        case (player, cards) => PlayerCards(id = player.id, cards = cards, drawThrowable = None)
-      },
       currentPlayer = startingPlayer.getOrElse(players.head.id),
       drawThrowPlayer = None,
       nextAction = ThrowType,
       lastAction = None,
       pile = shuffled.pile,
       deck = shuffled.deck,
-      ending = None
+      ending = None,
+      players = players.zip(shuffled.playerCards).map {
+        case (player, cards) => PlayerCards(id = player.id, cards = cards, drawThrowable = None)
+      }
     )
   }
 }

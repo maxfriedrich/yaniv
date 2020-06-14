@@ -8,6 +8,7 @@ object PileView {
 }
 
 case class GameStateView(
+    turn: Int,
     me: PlayerCards,
     otherPlayers: Seq[PlayerCardsView],
     playerOrder: Seq[PlayerId],
@@ -31,6 +32,7 @@ object GameStateView {
           PartialPlayerCardsView.fromPlayerCards(player)
       }
     GameStateView(
+      turn = gameState.turn,
       me = me,
       otherPlayers = otherPlayers,
       playerOrder = gameState.players.map(_.id),
