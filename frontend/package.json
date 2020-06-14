@@ -5,9 +5,9 @@
   "license": "MIT",
   "scripts": {
     "//": "Use --no-inline-css here because Bootstrap print styles are inlined due to a bug: https://github.com/preactjs/preact-cli/issues/1188",
-    "build": "preact build --no-prerender --no-inline-css --dest ../rest/public/frontend --template template.html",
-    "serve": "sirv start ../public/frontend --cors --single",
-    "dev": "preact watch --template template.html",
+    "build": "preact build --no-prerender --no-inline-css --dest ../rest/public/frontend",
+    "serve": "sirv start ../rest/public/frontend --cors --single",
+    "dev": "preact watch",
     "lint": "eslint 'src/**/*.{js,ts,tsx}'",
     "fix": "eslint 'src/**/*.{js,ts,tsx}' --fix"
   },
