@@ -11,11 +11,11 @@ class PredictorSpec extends AnyFlatSpec {
         Seq(
           (Chain(MinMaxScaler(0.0, 10.0), Weight(25.0)), in => in.a),
           (Weight(3.0), in => in.b),
-          (Identity, in => in.c),
+          (Identity, in => in.c)
         )
 
       override def aggregate(values: Seq[Double]): Double = values.sum / 25
-      override def targetTransformation: Transformation = Weight(5)
+      override def targetTransformation: Transformation   = Weight(5)
     }
     assert(model(TestFeatures(8.0, 2.0, 3.0)) == ((0.8 * 25 + 6.0 + 3.0) / 25) * 5)
   }

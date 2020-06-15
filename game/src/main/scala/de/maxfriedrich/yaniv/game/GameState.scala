@@ -33,14 +33,14 @@ case class GameState(
     config: GameConfig,
     version: Int = 0,
     turn: Int = 1,
+    players: Seq[PlayerCards],
     currentPlayer: PlayerId,
     drawThrowPlayer: Option[PlayerId],
     nextAction: GameActionType,
     lastAction: Option[GameActionWithPlayer],
     pile: Pile,
     deck: Seq[Card],
-    ending: Option[GameResult],
-    players: Seq[PlayerCards]
+    ending: Option[GameResult]
 ) {
   // copy forcing a version update but dumb otherwise (use GameLogic methods instead!)
   // TODO: not very nice to mix logic into the case class :/
