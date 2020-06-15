@@ -45,7 +45,7 @@
   "dependencies": {
     "bootstrap": "^4.5.0",
     "preact": "^10.3.0",
-    "preact-render-to-string": "^5.1.2",
+    "preact-render-to-string": "^5.1.9",
     "preact-router": "^3.2.1",
     "react-smooth-dnd": "^0.11.1"
   }
