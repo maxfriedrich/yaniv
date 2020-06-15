@@ -8,9 +8,7 @@ trait Predictor[F] {
 
   def apply(input: F): Double = {
     val weights = featureTransformations.map { case (feature, transformInput) => feature(transformInput(input)) }
-    println(s"transformed: $weights")
     val rawPred = intercept + aggregate(weights)
-    println(s"raw: $rawPred")
     targetTransformation(rawPred)
   }
 }
