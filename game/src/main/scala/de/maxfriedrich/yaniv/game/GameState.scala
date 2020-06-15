@@ -59,14 +59,14 @@ case class GameState(
       config = config,
       version = version + 1,
       turn = turn,
+      players = players,
       currentPlayer = currentPlayer,
       drawThrowPlayer = drawThrowPlayer,
       nextAction = nextAction,
       lastAction = lastAction,
       pile = pile,
       deck = deck,
-      ending = ending,
-      players = players
+      ending = ending
     )
 
 }
