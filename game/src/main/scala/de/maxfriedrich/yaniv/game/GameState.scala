@@ -76,16 +76,16 @@ object GameState {
     val shuffled = Shuffle.shuffle(players.size, config.playerNumCards, config.deck)
     GameState(
       config = config,
+      players = players.zip(shuffled.playerCards).map {
+        case (player, cards) => PlayerCards(id = player.id, cards = cards, drawThrowable = None)
+      },
       currentPlayer = startingPlayer.getOrElse(players.head.id),
       drawThrowPlayer = None,
       nextAction = ThrowType,
       lastAction = None,
       pile = shuffled.pile,
       deck = shuffled.deck,
-      ending = None,
-      players = players.zip(shuffled.playerCards).map {
-        case (player, cards) => PlayerCards(id = player.id, cards = cards, drawThrowable = None)
-      }
+      ending = None
     )
   }
 }
