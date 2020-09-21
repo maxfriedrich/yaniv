@@ -32,6 +32,7 @@ case class GameResult(ending: GameEnding, points: Map[PlayerId, Int])
 case class GameState(
     config: GameConfig,
     version: Int = 0,
+    turn: Int = 1,
     players: Seq[PlayerCards],
     currentPlayer: PlayerId,
     drawThrowPlayer: Option[PlayerId],
@@ -44,6 +45,7 @@ case class GameState(
   // copy forcing a version update but dumb otherwise (use GameLogic methods instead!)
   // TODO: not very nice to mix logic into the case class :/
   private[game] def copy(
+      turn: Int = turn,
       players: Seq[PlayerCards] = players,
       currentPlayer: PlayerId = currentPlayer,
       drawThrowPlayer: Option[PlayerId] = drawThrowPlayer,
@@ -56,6 +58,7 @@ case class GameState(
     GameState(
       config = config,
       version = version + 1,
+      turn = turn,
       players = players,
       currentPlayer = currentPlayer,
       drawThrowPlayer = drawThrowPlayer,

@@ -4,6 +4,8 @@ object GameLogic {
 
   def playerOrder(gs: GameState): Seq[PlayerId] = gs.players.map(_.id)
 
+  def isNewTurn(gs: GameState): Boolean = nextPlayer(gs) == playerOrder(gs).head
+
   def nextPlayer(gs: GameState): PlayerId = {
     val order        = playerOrder(gs)
     val currentIndex = order.indexOf(gs.currentPlayer)
@@ -76,6 +78,7 @@ object GameLogic {
       val playerCards = gs.players.find(_.id == playerId).get
       val newPlayer   = playerCards.copy(cards = playerCards.cards :+ newCard, drawThrowable = drawThrowable)
       gs.copy(
+        turn = if (isNewTurn(gs)) gs.turn + 1 else gs.turn,
         players = gs.players.map { p => if (p.id == playerId) newPlayer else p },
         currentPlayer = nextPlayer(gs),
         drawThrowPlayer = Some(playerId),
