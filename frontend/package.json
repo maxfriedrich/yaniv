@@ -29,7 +29,7 @@
     "@typescript-eslint/parser": "^2.34.0",
     "css-loader": "^4.3.0",
     "eslint": "^6.8.0",
-    "eslint-plugin-react": "^7.20.6",
+    "eslint-plugin-react": "^7.21.2",
     "eslint-plugin-react-hooks": "^4.0.4",
     "node-sass": "^4.14.1",
     "preact-cli": "^3.0.0-rc.14",
