@@ -27,7 +27,7 @@
     "@types/react": "^16.9.49",
     "@typescript-eslint/eslint-plugin": "^2.34.0",
     "@typescript-eslint/parser": "^2.34.0",
-    "css-loader": "^4.3.0",
+    "css-loader": "^5.1.2",
     "eslint": "^6.8.0",
     "eslint-plugin-react": "^7.20.6",
     "eslint-plugin-react-hooks": "^4.0.4",
@@ -39,13 +39,13 @@
     "prettier": "^2.1.2",
     "sass-loader": "^8.0.2",
     "sirv-cli": "^1.0.6",
-    "ts-loader": "^7.0.5",
+    "ts-loader": "^8.0.17",
     "typescript": "^3.9.5"
   },
   "dependencies": {
     "bootstrap": "^4.5.0",
     "preact": "^10.4.4",
-    "preact-render-to-string": "^5.1.9",
+    "preact-render-to-string": "^5.1.13",
     "preact-router": "^3.2.1",
     "react-smooth-dnd": "^0.11.1"
   }
