@@ -34,18 +34,18 @@
     "node-sass": "^4.14.1",
     "preact-cli": "^3.0.0-rc.14",
     "eslint-config-prettier": "^6.10.1",
-    "eslint-plugin-prettier": "^3.1.4",
+    "eslint-plugin-prettier": "^3.3.1",
     "husky": "^4.2.1",
     "prettier": "^2.1.2",
     "sass-loader": "^8.0.2",
     "sirv-cli": "^1.0.6",
-    "ts-loader": "^7.0.5",
+    "ts-loader": "^8.0.17",
     "typescript": "^3.9.5"
   },
   "dependencies": {
     "bootstrap": "^4.5.0",
     "preact": "^10.4.4",
-    "preact-render-to-string": "^5.1.9",
+    "preact-render-to-string": "^5.1.13",
     "preact-router": "^3.2.1",
     "react-smooth-dnd": "^0.11.1"
   }
