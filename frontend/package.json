@@ -30,7 +30,7 @@
     "css-loader": "^5.2.4",
     "eslint": "^6.8.0",
     "eslint-plugin-react": "^7.22.0",
-    "eslint-plugin-react-hooks": "^4.0.4",
+    "eslint-plugin-react-hooks": "^4.2.0",
     "node-sass": "^4.14.1",
     "preact-cli": "^3.0.0-rc.14",
     "eslint-config-prettier": "^6.10.1",
