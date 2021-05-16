@@ -43,7 +43,7 @@
     "typescript": "^3.9.5"
   },
   "dependencies": {
-    "bootstrap": "^4.5.0",
+    "bootstrap": "^4.6.0",
     "preact": "^10.4.4",
     "preact-render-to-string": "^5.1.13",
     "preact-router": "^3.2.1",
