@@ -32,7 +32,7 @@
     "eslint-plugin-react": "^7.22.0",
     "eslint-plugin-react-hooks": "^4.2.0",
     "node-sass": "^4.14.1",
-    "preact-cli": "^3.0.5",
+    "preact-cli": "^3.4.3",
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-prettier": "^3.4.0",
     "husky": "^4.2.1",
